@@ -42,13 +42,13 @@
   <button id="nextYear">Año siguiente »</button>
 </div>
 <div class="counters">
-  <p id="vacationCount">Días de vacaciones usados: 0</p>
+  <p id="vacationCount">Días de vacaciones usados (año actual): 0</p>
   <p id="vacationPrevCount">Días de vacaciones año anterior usados: 0</p>
   <p id="medicalCount">Días médicos: 0</p>
-  <p id="remaining">Vacaciones restantes: 23</p>
+  <p id="remaining">Vacaciones totales disponibles: 23</p>
 </div>
 <div class="labels">
-  <span><span class="vacation-dot"></span> Vacaciones</span>
+  <span><span class="vacation-dot"></span> Vacaciones año actual</span>
   <span><span class="vacation-prev-dot"></span> Vacaciones año anterior (AN)</span>
   <span><span class="medical-dot"></span> Médico</span>
   <span><span class="holiday-national-dot"></span> Festivo Nacional</span>
@@ -58,7 +58,7 @@
 <div class="calendar" id="calendar"></div>
 <script>
 let currentYear = new Date().getFullYear();
-const vacationLimit = 23;
+const vacationLimit = 23; // Días del año actual
 const vacationCount = document.getElementById("vacationCount");
 const vacationPrevCount = document.getElementById("vacationPrevCount");
 const medicalCount = document.getElementById("medicalCount");
@@ -68,10 +68,10 @@ const calendar = document.getElementById("calendar");
 const dayNames = ["L","M","X","J","V","S","D"];
 const months = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 
-let yearData = {};      // { year: { vacation: Set, vacationPrev: Set, medical: Set } }
-let carryOver = {};     // carryOver[year] = días sobrantes del año anterior que se pueden usar en year+1
+let yearData = {};      // { year: { vacation: Set (actual), vacationPrev: Set (del anterior), medical: Set } }
+let carryOver = {};     // carryOver[year] = días sobrantes del año year que se pueden usar en year+1
 
-// --- HOLIDAYS ---
+// --- HOLIDAYS (igual que antes) ---
 function getFixedHolidays(year){
   const fixed = [
     {month:1,day:1},{month:1,day:6},{month:5,day:1},
@@ -142,7 +142,7 @@ function saveData() {
   localStorage.setItem('calendarData', JSON.stringify(toSave));
 }
 
-// --- CALENDAR ---
+// --- CALENDAR (igual que antes, con pequeñas mejoras) ---
 function createCalendar(year){
   currentYear = year;
   yearInput.value = year;
@@ -155,12 +155,12 @@ function createCalendar(year){
     yearData[year] = { vacation: new Set(), vacationPrev: new Set(), medical: new Set() };
   }
 
-  // Calcular carryOver del año anterior si aún no está hecho
+  // Calcular carryOver del año anterior
   const prevYear = year - 1;
   if (carryOver[prevYear] === undefined && yearData[prevYear]) {
     const prev = yearData[prevYear];
-    const usedPrev = (prev.vacation.size + prev.vacationPrev.size);
-    const leftover = vacationLimit - usedPrev + (carryOver[prevYear - 1] || 0);
+    const totalUsedPrev = prev.vacation.size + prev.vacationPrev.size;
+    const leftover = vacationLimit - totalUsedPrev + (carryOver[prevYear - 1] || 0);
     carryOver[prevYear] = Math.max(0, leftover);
   }
 
@@ -178,7 +178,6 @@ function createCalendar(year){
     const daysDiv = document.createElement("div");
     daysDiv.className = "days";
 
-    // Cabeceras días semana
     dayNames.forEach(d => {
       const label = document.createElement("div");
       label.className = "day";
@@ -187,11 +186,9 @@ function createCalendar(year){
       daysDiv.appendChild(label);
     });
 
-    // Espacios iniciales
-    const startDay = (firstDay + 6) % 7; // Lunes = 0
+    const startDay = (firstDay + 6) % 7;
     for(let i = 0; i < startDay; i++) daysDiv.appendChild(document.createElement("div"));
 
-    // Días del mes
     for(let d = 1; d <= totalDays; d++){
       const dayDiv = document.createElement("div");
       dayDiv.className = "day";
@@ -207,7 +204,6 @@ function createCalendar(year){
       else if (dayOfWeek === 0 || dayOfWeek === 6) dayDiv.classList.add("weekend");
       else dayDiv.addEventListener("click", () => handleDayClick(dayDiv, year, m, d));
 
-      // Marcas existentes
       if (yearData[year].vacation.has(dateKey)) dayDiv.classList.add("vacation");
       if (yearData[year].vacationPrev.has(dateKey)) {
         dayDiv.classList.add("vacation-prev");
@@ -223,14 +219,12 @@ function createCalendar(year){
   updateCounters();
 }
 
-// --- UTILIDADES ---
 function getAvailableVacationDays() {
   const data = yearData[currentYear];
   const carry = carryOver[currentYear - 1] || 0;
-  const usedNormal = data.vacation.size;
   const usedPrev = data.vacationPrev.size;
-  const totalUsed = usedNormal + usedPrev;
-  return vacationLimit + carry - totalUsed;
+  const usedNormal = data.vacation.size;
+  return carry - usedPrev + vacationLimit - usedNormal;
 }
 
 function getTodayKey(){
@@ -243,7 +237,6 @@ function handleDayClick(dayDiv, year, month, day){
   const dateKey = `${year}-${month+1}-${day}`;
   const data = yearData[year];
 
-  // Si ya está marcado como vacaciones o médico → desmarcar
   if (dayDiv.classList.contains("vacation") || dayDiv.classList.contains("vacation-prev") || dayDiv.classList.contains("medical")) {
     dayDiv.classList.remove("vacation", "vacation-prev", "medical");
     data.vacation.delete(dateKey);
@@ -266,10 +259,10 @@ function handleDayClick(dayDiv, year, month, day){
     return;
   }
 
-  // --- MARCAR VACACIONES ---
+  // VACACIONES
   const available = getAvailableVacationDays();
   if (available <= 0) {
-    alert("No te quedan días de vacaciones disponibles (ni del año actual ni del anterior).");
+    alert("No te quedan días de vacaciones disponibles (ni del año anterior ni del actual).");
     return;
   }
 
@@ -279,19 +272,17 @@ function handleDayClick(dayDiv, year, month, day){
 
   let usePrev = false;
   if (remainingCarry > 0) {
-    usePrev = confirm(`Tienes ${remainingCarry} días del año anterior disponibles. ¿Quieres usar uno de ellos para este día?`);
+    usePrev = confirm(`Tienes ${remainingCarry} días del año anterior disponibles. ¿Quieres usar uno de ellos?`);
   }
 
-  const dayOfWeek = new Date(year, month, day).getDay(); // 1=Lunes ... 5=Viernes
+  const dayOfWeek = new Date(year, month, day).getDay();
   let markWeek = false;
   if (dayOfWeek >= 1 && dayOfWeek <= 5) {
     markWeek = confirm("¿Quieres marcar vacaciones hasta el viernes de esta semana?");
   }
 
   let daysToMark = [];
-
   if (markWeek) {
-    // Contar cuántos días laborables hay hasta viernes
     for (let i = dayOfWeek; i <= 5; i++) {
       const tempDate = new Date(year, month, day + (i - dayOfWeek));
       if (tempDate.getFullYear() !== year) {
@@ -301,7 +292,7 @@ function handleDayClick(dayDiv, year, month, day){
       }
       const tempKey = `${year}-${tempDate.getMonth()+1}-${tempDate.getDate()}`;
       const tempDow = tempDate.getDay();
-      if (tempDow === 0 || tempDow === 6) continue; // fin de semana
+      if (tempDow === 0 || tempDow === 6) continue;
       if (getHolidaySets(year).national.has(tempKey) || getHolidaySets(year).local.has(tempKey)) continue;
       daysToMark.push(tempKey);
     }
@@ -309,17 +300,15 @@ function handleDayClick(dayDiv, year, month, day){
     daysToMark.push(dateKey);
   }
 
-  // Comprobar si hay suficientes días disponibles
   if (daysToMark.length > available) {
-    alert(`No tienes suficientes días de vacaciones. Necesitas ${daysToMark.length} pero solo te quedan ${available}.`);
+    alert(`No tienes suficientes días disponibles. Necesitas ${daysToMark.length} pero solo te quedan ${available}.`);
     return;
   }
 
-  // Marcar los días
   daysToMark.forEach(key => {
     const div = document.querySelector(`.day[data-date='${key}']`);
     const dNum = parseInt(div.textContent.replace(" AN", ""));
-    if (usePrev && remainingCarry > usedPrev + daysToMark.filter(k => data.vacationPrev.has(k)).length) {
+    if (usePrev && remainingCarry > data.vacationPrev.size) {
       data.vacationPrev.add(key);
       div.classList.add("vacation-prev");
       div.textContent = dNum + " AN";
@@ -338,12 +327,11 @@ function updateCounters(){
   const data = yearData[currentYear] || {vacation: new Set(), vacationPrev: new Set(), medical: new Set()};
   const carry = carryOver[currentYear - 1] || 0;
   const usedPrev = data.vacationPrev.size;
-  const remainingCarry = carry - usedPrev;
 
   vacationCount.textContent = `Días de vacaciones usados (año actual): ${data.vacation.size}`;
   vacationPrevCount.textContent = `Días de vacaciones año anterior usados: ${usedPrev} (de ${carry} disponibles)`;
   medicalCount.textContent = `Días médicos: ${data.medical.size}`;
-  remaining.textContent = `Vacaciones restantes: ${getAvailableVacationDays()}`;
+  remaining.textContent = `Vacaciones totales disponibles: ${getAvailableVacationDays()}`;
 }
 
 // Inicialización
