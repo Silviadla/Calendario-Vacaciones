@@ -3,59 +3,223 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Calendario Vacaciones</title>
+<title>Calendario Vacaciones León</title>
 <link rel="icon" href="playa.png" type="image/png" />
 <style>
+  :root {
+    --bg: #f0f8ff;
+    --card-bg: #ffffff;
+    --text: #333;
+    --shadow: 0 4px 12px rgba(0,0,0,0.1);
+    --today-border: #3f51b5;
+    --accent: #4caf50;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #121212;
+      --card-bg: #1e1e1e;
+      --text: #e0e0e0;
+      --shadow: 0 4px 12px rgba(0,0,0,0.5);
+    }
+  }
   * { box-sizing: border-box; }
-  body { font-family: Arial, sans-serif; margin:0; padding:1rem; background-color:#f0f8ff; }
-  h1 { text-align:center; margin-bottom:0.5rem; }
+  body { 
+    font-family: 'Segoe UI', Arial, sans-serif; 
+    margin:0; 
+    padding:1rem; 
+    background:var(--bg); 
+    color:var(--text);
+    min-height:100vh;
+    transition: background 0.3s;
+  }
+  h1 { text-align:center; margin-bottom:0.5rem; color:var(--text); }
   .year-selector { text-align:center; margin-bottom:1rem; }
-  .counters { text-align:center; margin-bottom:1rem; }
-  .calendar { display:grid; grid-template-columns: repeat(auto-fill, minmax(250px,1fr)); gap:1rem; }
-  .month { background-color:#fff; border-radius:10px; padding:0.5rem; box-shadow:0 2px 5px rgba(0,0,0,0.1); }
-  .month h2 { text-align:center; margin-top:0; }
-  .days { display:grid; grid-template-columns: repeat(7,1fr); gap:3px; font-size:0.8rem; }
-  .day { border:1px solid #ccc; padding:0.4rem; text-align:center; cursor:pointer; border-radius:4px; }
-  .vacation { background-color:#FFCC80; }
-  .vacation-prev { background-color:#FFA726; font-weight:bold; color:#000; }
-  .medical { background-color:#90CAF9; }
-  .holiday-national { background-color:#F28B82; }
-  .holiday-local { background-color:#E1BEE7; }
-  .weekend { background-color:#EEEEEE; }
-  .today { border:2px solid #3f51b5; }
-  .labels { display:flex; justify-content:center; gap:1rem; margin-bottom:1rem; font-size:0.9rem; flex-wrap:wrap; }
-  .labels span { display:inline-flex; align-items:center; gap:0.3rem; }
-  .vacation-dot { width:1rem; height:1rem; border-radius:50%; display:inline-block; background-color:#FFCC80; }
-  .vacation-prev-dot { width:1rem; height:1rem; border-radius:50%; display:inline-block; background-color:#FFA726; }
-  .medical-dot { width:1rem; height:1rem; border-radius:50%; display:inline-block; background-color:#90CAF9; }
-  .holiday-national-dot { width:1rem; height:1rem; border-radius:50%; display:inline-block; background-color:#F28B82; }
-  .holiday-local-dot { width:1rem; height:1rem; border-radius:50%; display:inline-block; background-color:#E1BEE7; }
-  .weekend-dot { width:1rem; height:1rem; border-radius:50%; display:inline-block; background-color:#EEEEEE; }
-  @media (max-width:600px){ .days{ font-size:0.7rem; } }
+  .year-selector button { 
+    padding:0.6rem 1.2rem; 
+    margin:0 0.5rem; 
+    border:none; 
+    background:#3f51b5; 
+    color:white; 
+    border-radius:8px; 
+    cursor:pointer; 
+    font-size:1rem;
+  }
+  .year-selector button:hover { background:#303f9f; }
+  .year-selector input { 
+    padding:0.6rem; 
+    width:90px; 
+    text-align:center; 
+    border-radius:8px; 
+    border:1px solid #aaa; 
+    font-size:1rem;
+  }
+  .counters { 
+    display:flex; 
+    flex-wrap:wrap; 
+    justify-content:center; 
+    gap:1.2rem; 
+    margin:1.5rem 0;
+  }
+  .counter-box {
+    background:var(--card-bg);
+    padding:1.2rem;
+    border-radius:14px;
+    box-shadow:var(--shadow);
+    min-width:220px;
+    text-align:center;
+    transition: transform 0.2s;
+  }
+  .counter-box:hover { transform: translateY(-5px); }
+  .counter-box div { font-size:0.95rem; opacity:0.9; }
+  .counter-box strong { 
+    font-size:1.6rem; 
+    display:block; 
+    margin-top:0.6rem; 
+    font-weight:bold;
+  }
+  .big-remaining {
+    font-size:2.4rem !important;
+    color:var(--accent);
+  }
+  #resetYear {
+    display:block;
+    margin:1.5rem auto;
+    padding:0.9rem 2rem;
+    background:#f44336;
+    color:white;
+    border:none;
+    border-radius:10px;
+    cursor:pointer;
+    font-size:1.1rem;
+  }
+  #resetYear:hover { background:#d32f2f; }
+  .labels { 
+    display:flex; 
+    justify-content:center; 
+    gap:1.2rem; 
+    margin:1.5rem 0; 
+    font-size:0.95rem; 
+    flex-wrap:wrap; 
+  }
+  .labels span { display:inline-flex; align-items:center; gap:0.5rem; }
+  .vacation-dot, .vacation-prev-dot, .medical-dot, 
+  .holiday-national-dot, .holiday-local-dot, .weekend-dot {
+    width:1.2rem; height:1.2rem; border-radius:50%; display:inline-block;
+  }
+  .vacation-dot { background:#FFCC80; }
+  .vacation-prev-dot { background:#FFA726; }
+  .medical-dot { background:#90CAF9; }
+  .holiday-national-dot { background:#F28B82; }
+  .holiday-local-dot { background:#E1BEE7; }
+  .weekend-dot { background:#EEEEEE; }
+  .calendar { 
+    display:grid; 
+    grid-template-columns: repeat(auto-fill, minmax(300px,1fr)); 
+    gap:1.2rem; 
+  }
+  .month { 
+    background:var(--card-bg); 
+    border-radius:14px; 
+    padding:1rem; 
+    box-shadow:var(--shadow);
+  }
+  .month h2 { text-align:center; margin:0 0 0.8rem; font-size:1.3rem; color:var(--text); }
+  .days { display:grid; grid-template-columns: repeat(7,1fr); gap:5px; font-size:0.85rem; }
+  .day { 
+    border:1px solid #ccc; 
+    padding:0.7rem; 
+    text-align:center; 
+    cursor:pointer; 
+    border-radius:10px; 
+    transition: all 0.25s;
+    position:relative;
+    min-height:50px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .day:hover { 
+    transform: scale(1.08); 
+    z-index:2; 
+    box-shadow:0 6px 12px rgba(0,0,0,0.2); 
+  }
+  .vacation { background:#FFCC80; animation: pulse 0.4s ease; }
+  .vacation-prev { background:#FFA726; color:#000; font-weight:bold; animation: pulse 0.4s ease; }
+  .medical { background:#90CAF9; animation: pulse 0.4s ease; }
+  .holiday-national { background:#F28B82; }
+  .holiday-local { background:#E1BEE7; }
+  .weekend { background:#f5f5f5; opacity:0.8; }
+  .today { 
+    border:4px solid var(--today-border) !important; 
+    font-weight:bold;
+    animation: glow 2s infinite alternate;
+  }
+  .tooltip {
+    position:absolute;
+    bottom:100%;
+    left:50%;
+    transform:translateX(-50%);
+    background:rgba(0,0,0,0.85);
+    color:white;
+    padding:0.5rem 0.9rem;
+    border-radius:8px;
+    font-size:0.8rem;
+    white-space:nowrap;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity 0.2s;
+    z-index:10;
+    margin-bottom:8px;
+  }
+  .day.holiday-national:hover .tooltip,
+  .day.holiday-local:hover .tooltip { opacity:1; }
+  @keyframes pulse { 0%{transform:scale(1);} 50%{transform:scale(1.12);} 100%{transform:scale(1);} }
+  @keyframes glow { from{box-shadow:0 0 8px var(--today-border);} to{box-shadow:0 0 20px var(--today-border);} }
+  @media (max-width:600px){ 
+    .days{ font-size:0.75rem; gap:3px; }
+    .day { padding:0.5rem; min-height:40px; }
+    .counter-box { min-width:140px; padding:1rem; }
+    .big-remaining { font-size:2rem; }
+    .counters { gap:0.8rem; }
+  }
 </style>
 </head>
 <body>
-<h1>Calendario Vacaciones</h1>
+<h1>Calendario Vacaciones León</h1>
 <div class="year-selector">
   <button id="prevYear">« Año anterior</button>
-  <input type="number" id="yearInput" value="2026" min="2000" max="2100" style="width:80px; text-align:center;">
+  <input type="number" id="yearInput" value="2026" min="2000" max="2100">
   <button id="nextYear">Año siguiente »</button>
 </div>
 <div class="counters">
-  <p id="vacationCount">Días de vacaciones usados (año actual): 0</p>
-  <p id="vacationPrevCount">Días de vacaciones año anterior usados: 0</p>
-  <p id="medicalCount">Días médicos: 0</p>
-  <p id="remaining">Vacaciones totales disponibles: 23</p>
+  <div class="counter-box">
+    <div>Días usados (año actual)</div>
+    <strong id="vacationCount">0</strong>
+  </div>
+  <div class="counter-box">
+    <div>Días año anterior usados</div>
+    <strong id="vacationPrevCount">0</strong>
+  </div>
+  <div class="counter-box">
+    <div>Días médicos</div>
+    <strong id="medicalCount">0</strong>
+  </div>
+  <div class="counter-box">
+    <div>Días totales disponibles</div>
+    <strong id="remaining" class="big-remaining">23</strong>
+  </div>
 </div>
+<button id="resetYear">Borrar todas las marcas de este año</button>
 <div class="labels">
   <span><span class="vacation-dot"></span> Vacaciones año actual</span>
   <span><span class="vacation-prev-dot"></span> Vacaciones año anterior (AN)</span>
   <span><span class="medical-dot"></span> Médico</span>
   <span><span class="holiday-national-dot"></span> Festivo Nacional</span>
-  <span><span class="holiday-local-dot"></span> Festivo Local</span>
+  <span><span class="holiday-local-dot"></span> Festivo Local / Trasladado</span>
   <span><span class="weekend-dot"></span> Fin de semana</span>
 </div>
 <div class="calendar" id="calendar"></div>
+
 <script>
 let currentYear = new Date().getFullYear();
 const vacationLimit = 23;
@@ -102,27 +266,20 @@ function getEasterRelatedHolidays(year){
 function getLocalAndTransferredHolidays(year){
   const holidays = new Set();
 
-  // Locales de León ciudad
   holidays.add(`${year}-4-23`); // Día de Castilla y León
   holidays.add(`${year}-6-24`); // San Juan
 
-  // San Froilán (5 octubre) + traslado si cae domingo
-  let sanFroilan = new Date(year, 9, 5); // octubre = mes 9
-  if (sanFroilan.getDay() === 0) { // domingo
-    sanFroilan.setDate(6); // lunes
-  }
+  // San Froilán (5 octubre) + traslado si domingo
+  let sanFroilan = new Date(year, 9, 5);
+  if (sanFroilan.getDay() === 0) sanFroilan.setDate(6);
   holidays.add(`${year}-${sanFroilan.getMonth()+1}-${sanFroilan.getDate()}`);
 
-  // Traslados autonómicos Castilla y León
-  const dec6 = new Date(year, 11, 6); // 6 diciembre
-  if (dec6.getDay() === 0) {
-    holidays.add(`${year}-12-7`);
-  }
+  // Traslados autonómicos
+  const dec6 = new Date(year, 11, 6);
+  if (dec6.getDay() === 0) holidays.add(`${year}-12-7`);
 
-  const nov1 = new Date(year, 10, 1); // 1 noviembre
-  if (nov1.getDay() === 0) {
-    holidays.add(`${year}-11-2`);
-  }
+  const nov1 = new Date(year, 10, 1);
+  if (nov1.getDay() === 0) holidays.add(`${year}-11-2`);
 
   return holidays;
 }
@@ -134,7 +291,7 @@ function getHolidaySets(year){
   };
 }
 
-// --- PERSISTENCE, CARRY OVER, CALENDAR, etc. (igual que antes) ---
+// --- PERSISTENCE ---
 function loadData() {
   const saved = localStorage.getItem('calendarData');
   if (saved) {
@@ -164,6 +321,7 @@ function saveData() {
   localStorage.setItem('calendarData', JSON.stringify(toSave));
 }
 
+// --- CARRY OVER ---
 function calculateCarryOver(year) {
   if (carryOver[year] !== undefined) return carryOver[year];
   if (!yearData[year]) {
@@ -185,6 +343,7 @@ function ensureCarryOverUpTo(prevYear) {
   }
 }
 
+// --- CALENDAR ---
 function createCalendar(year){
   currentYear = year;
   yearInput.value = year;
@@ -234,10 +393,30 @@ function createCalendar(year){
       const dayOfWeek = new Date(year, m, d).getDay();
 
       if (dateKey === getTodayKey()) dayDiv.classList.add("today");
-      if (nationalHolidays.has(dateKey)) dayDiv.classList.add("holiday-national");
-      else if (localHolidays.has(dateKey)) dayDiv.classList.add("holiday-local");
-      else if (dayOfWeek === 0 || dayOfWeek === 6) dayDiv.classList.add("weekend");
-      else dayDiv.addEventListener("click", () => handleDayClick(dayDiv, year, m, d));
+
+      if (nationalHolidays.has(dateKey)) {
+        dayDiv.classList.add("holiday-national");
+        const tooltip = document.createElement("div");
+        tooltip.className = "tooltip";
+        tooltip.textContent = "Festivo Nacional";
+        dayDiv.appendChild(tooltip);
+      } else if (localHolidays.has(dateKey)) {
+        dayDiv.classList.add("holiday-local");
+        const tooltip = document.createElement("div");
+        tooltip.className = "tooltip";
+        let name = "Festivo Local";
+        if (dateKey.includes("-10-")) name = "San Froilán" + (dateKey.endsWith("-6") ? " (trasladado)" : "");
+        else if (dateKey === `${year}-4-23`) name = "Día de Castilla y León";
+        else if (dateKey === `${year}-6-24`) name = "San Juan";
+        else if (dateKey === `${year}-12-7`) name = "Día de la Constitución (trasladado)";
+        else if (dateKey === `${year}-11-2`) name = "Todos los Santos (trasladado)";
+        tooltip.textContent = name;
+        dayDiv.appendChild(tooltip);
+      } else if (dayOfWeek === 0 || dayOfWeek === 6) {
+        dayDiv.classList.add("weekend");
+      } else {
+        dayDiv.addEventListener("click", () => handleDayClick(dayDiv, year, m, d));
+      }
 
       if (yearData[year].vacationPrev.has(dateKey)) {
         dayDiv.classList.add("vacation-prev");
@@ -268,6 +447,7 @@ function getTodayKey(){
   return `${today.getFullYear()}-${today.getMonth()+1}-${today.getDate()}`;
 }
 
+// --- CLICK DAY ---
 function handleDayClick(dayDiv, year, month, day){
   const dateKey = `${year}-${month+1}-${day}`;
   const data = yearData[year];
@@ -361,18 +541,29 @@ function handleDayClick(dayDiv, year, month, day){
   saveData();
 }
 
+// --- CONTADORES ---
 function updateCounters(){
   ensureCarryOverUpTo(currentYear - 1);
   const data = yearData[currentYear] || {vacation: new Set(), vacationPrev: new Set(), medical: new Set()};
   const carry = carryOver[currentYear - 1] || 0;
   const usedPrev = data.vacationPrev.size;
 
-  vacationCount.textContent = `Días de vacaciones usados (año actual): ${data.vacation.size}`;
-  vacationPrevCount.textContent = `Días de vacaciones año anterior usados: ${usedPrev} (de ${carry} disponibles)`;
-  medicalCount.textContent = `Días médicos: ${data.medical.size}`;
-  remaining.textContent = `Vacaciones totales disponibles: ${getAvailableVacationDays()}`;
+  vacationCount.textContent = data.vacation.size;
+  vacationPrevCount.textContent = `${usedPrev} (de ${carry} disponibles)`;
+  medicalCount.textContent = data.medical.size;
+  remaining.textContent = getAvailableVacationDays();
 }
 
+// --- RESET ---
+document.getElementById("resetYear").addEventListener("click", () => {
+  if (confirm(`¿Seguro que quieres borrar TODAS las marcas de ${currentYear}?`)) {
+    yearData[currentYear] = { vacation: new Set(), vacationPrev: new Set(), medical: new Set() };
+    saveData();
+    createCalendar(currentYear);
+  }
+});
+
+// Inicialización
 loadData();
 document.getElementById("prevYear").addEventListener("click", () => createCalendar(currentYear - 1));
 document.getElementById("nextYear").addEventListener("click", () => createCalendar(currentYear + 1));
