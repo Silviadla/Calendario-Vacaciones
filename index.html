@@ -35,23 +35,29 @@
   .btn-phone { background: #22c55e; color: white; }
   .btn-anon { background: transparent; border: 1px solid var(--border); color: var(--text); }
 
-  /* --- ESTILOS CALENDARIO (Tus originales) --- */
+  /* --- ESTILOS CALENDARIO --- */
   h1 { text-align: center; font-size: 2.2rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--primary); }
   .user-info { text-align: center; margin-bottom: 1.8rem; font-size: 0.85rem; opacity: 0.8; }
   .logout-link { color: #e53e3e; cursor: pointer; text-decoration: underline; margin-left: 10px; }
+  .sync-status { font-size: 0.75rem; color: var(--vacation); font-weight: bold; margin-top: 5px; display: block; }
+  
   .year-selector { text-align: center; margin-bottom: 1.5rem; }
   .year-selector button { padding: 0.6rem 1.2rem; margin: 0 0.4rem; border: 1px solid var(--border); background: var(--card-bg); color: var(--text); border-radius: 12px; cursor: pointer; font-weight: 500; transition: all 0.3s; }
   .year-selector button:hover { background: var(--primary); color: white; border-color: var(--primary); }
   .year-selector input { padding: 0.6rem; width: 100px; text-align: center; border: 1px solid var(--border); background: var(--card-bg); border-radius: 12px; font-size: 1.1rem; font-weight: 500; }
+  
   .counters { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.8rem; margin: 1.5rem 0; }
   .counter-box { background: var(--card-bg); padding: 0.9rem 0.8rem; border-radius: 14px; box-shadow: var(--shadow); text-align: center; border: 1px solid var(--border); }
   .counter-box div { font-size: 0.8rem; opacity: 0.85; margin-bottom: 0.4rem; font-weight: 500; }
   .counter-box strong { font-size: 1.6rem; font-weight: 700; }
   .big-remaining { font-size: 2rem !important; color: var(--primary); }
+  
   #resetYear { display: block; margin: 1.8rem auto; padding: 0.8rem 1.8rem; background: #e53e3e; color: white; border: none; border-radius: 12px; cursor: pointer; font-weight: 600; box-shadow: var(--shadow); }
+  
   .labels { display: flex; justify-content: center; gap: 1rem; margin: 1.5rem 0; flex-wrap: wrap; font-size: 0.9rem; font-weight: 500; }
   .labels span { display: flex; align-items: center; gap: 0.5rem; }
   .dot { width: 0.9rem; height: 0.9rem; border-radius: 50%; display: inline-block; }
+  
   .calendar { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem; width: 100%; }
   .month { background: var(--card-bg); border-radius: 20px; padding: 1.5rem; box-shadow: var(--shadow); border: 1px solid var(--border); }
   .month h2 { text-align: center; margin-bottom: 1rem; font-size: 1.4rem; font-weight: 600; color: var(--primary); }
@@ -95,6 +101,7 @@
     <div class="user-info">
       Usuario: <span id="userTag" style="font-weight: 600;"></span>
       <span class="logout-link" onclick="logout()">Cerrar sesión</span>
+      <span id="syncText" class="sync-status">Sincronizado</span>
     </div>
 
     <div class="year-selector">
@@ -161,7 +168,7 @@ firebase.auth().onAuthStateChanged((user) => {
     document.getElementById('userTag').textContent = user.email || user.phoneNumber || "Invitado";
     document.getElementById('authSection').style.display = 'none';
     document.getElementById('calendarSection').style.display = 'block';
-    loadData(); // Cargar datos del usuario
+    loadData(); // Cargar datos inmediatamente al entrar
   } else {
     userId = null;
     document.getElementById('authSection').style.display = 'block';
@@ -196,25 +203,30 @@ function logout() {
   firebase.auth().signOut();
 }
 
-// --- LÓGICA DEL CALENDARIO (Tus funciones originales) ---
+// --- LÓGICA DEL CALENDARIO ---
 
-let currentYear = new Date().getFullYear();
+let currentYear = 2026;
 const vacationLimit = 23;
 let yearData = {};      
 let carryOver = {};     
 
-// Tus elementos del DOM
 const vacationCount = document.getElementById("vacationCount");
 const vacationPrevCount = document.getElementById("vacationPrevCount");
 const medicalCount = document.getElementById("medicalCount");
 const remaining = document.getElementById("remaining");
 const yearInput = document.getElementById("yearInput");
 const calendar = document.getElementById("calendar");
+const syncText = document.getElementById("syncText");
+
 const dayNames = ["L","M","X","J","V","S","D"];
 const months = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 
-// Carga y Guardado
+// --- CARGA Y GUARDADO CON NUBE ---
 function loadData() {
+  if (!userId) return;
+  syncText.textContent = "Cargando...";
+  syncText.style.color = "orange";
+
   db.collection("calendarios").doc(userId).get().then((doc) => {
     if (doc.exists) {
       const data = doc.data();
@@ -222,19 +234,34 @@ function loadData() {
       carryOver = data.carryOver || {};
     }
     createCalendar(currentYear);
-  }).catch(() => createCalendar(currentYear));
+    syncText.textContent = "Sincronizado";
+    syncText.style.color = "var(--vacation)";
+  }).catch((e) => {
+    console.error(e);
+    syncText.textContent = "Error de conexión";
+    syncText.style.color = "red";
+    createCalendar(currentYear);
+  });
 }
 
 function saveData() {
   if (!userId) return;
+  syncText.textContent = "Guardando...";
+  syncText.style.color = "orange";
+
   db.collection("calendarios").doc(userId).set({
     yearData: convertToArrays(yearData),
     carryOver: carryOver,
     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+  }).then(() => {
+    syncText.textContent = "Sincronizado";
+    syncText.style.color = "var(--vacation)";
+  }).catch((e) => {
+    syncText.textContent = "Error al guardar";
+    syncText.style.color = "red";
   });
 }
 
-// Helpers Sets/Arrays
 function convertToSets(data) {
   const converted = {};
   for (const y in data) {
@@ -258,7 +285,7 @@ function convertToArrays(data) {
   return converted;
 }
 
-// LÓGICA DE FESTIVOS (León y Nacionales)
+// LÓGICA DE FESTIVOS (LEÓN)
 function getFixedHolidays(year){
   const fixed = [
     {month:1,day:1},{month:1,day:6},{month:5,day:1},
@@ -288,8 +315,8 @@ function getEasterRelatedHolidays(year){
 
 function getLocalAndTransferredHolidays(year){
   const holidays = new Set();
-  holidays.add(`${year}-4-23`); // CyL
-  holidays.add(`${year}-6-24`); // San Juan
+  holidays.add(`${year}-4-23`);
+  holidays.add(`${year}-6-24`);
   let sanFroilan = new Date(year, 9, 5);
   if (sanFroilan.getDay() === 0) sanFroilan.setDate(6);
   holidays.add(`${year}-${sanFroilan.getMonth()+1}-${sanFroilan.getDate()}`);
@@ -305,7 +332,6 @@ function getHolidaySets(year){
   };
 }
 
-// CÁLCULO DÍAS SOBRANTES
 function calculateCarryOver(year) {
   if (carryOver[year] !== undefined) return carryOver[year];
   if (!yearData[year]) return 0;
@@ -321,7 +347,6 @@ function ensureCarryOverUpTo(prevYear) {
   for (let y = 2025; y <= prevYear; y++) calculateCarryOver(y);
 }
 
-// CREACIÓN DE CALENDARIO
 function createCalendar(year){
   currentYear = year;
   yearInput.value = year;
@@ -356,7 +381,8 @@ function createCalendar(year){
       dayDiv.innerHTML = `<span>${d}</span>`;
       
       const dayOfWeek = new Date(year, m, d).getDay();
-      if (dateKey === `${new Date().getFullYear()}-${new Date().getMonth()+1}-${new Date().getDate()}`) dayDiv.classList.add("today");
+      const isToday = (dateKey === `${new Date().getFullYear()}-${new Date().getMonth()+1}-${new Date().getDate()}`);
+      if (isToday) dayDiv.classList.add("today");
 
       if (holidays.national.has(dateKey)) {
         dayDiv.classList.add("holiday-national");
@@ -388,7 +414,6 @@ function handleDayClick(dayDiv, year, month, day){
   const dateKey = `${year}-${month+1}-${day}`;
   const data = yearData[year];
   
-  // Limpiar anterior
   data.vacation.delete(dateKey); data.vacationPrev.delete(dateKey); data.medical.delete(dateKey);
 
   const type = prompt("¿Qué quieres marcar? (v = vacaciones, m = médico, c = borrar)").toLowerCase();
@@ -399,7 +424,6 @@ function handleDayClick(dayDiv, year, month, day){
     const remainingCarry = carry - data.vacationPrev.size;
     let usePrev = (remainingCarry > 0) && confirm(`Usar día de año anterior? (Quedan ${remainingCarry})`);
 
-    // Lógica de marcar semana (Tu original)
     const dow = new Date(year, month, day).getDay();
     let markWeek = (dow >= 1 && dow <= 5) && confirm("¿Marcar hasta el viernes?");
     
@@ -418,7 +442,7 @@ function handleDayClick(dayDiv, year, month, day){
     });
   }
   
-  delete carryOver[year]; // Forzar recálculo
+  delete carryOver[year];
   saveData();
   createCalendar(year);
 }
@@ -432,7 +456,6 @@ function updateCounters(){
   remaining.textContent = (vacationLimit + carry) - (data.vacation.size + data.vacationPrev.size);
 }
 
-// Botones navegación
 document.getElementById("prevYear").onclick = () => createCalendar(currentYear - 1);
 document.getElementById("nextYear").onclick = () => createCalendar(currentYear + 1);
 document.getElementById("yearInput").onchange = (e) => createCalendar(parseInt(e.target.value));
