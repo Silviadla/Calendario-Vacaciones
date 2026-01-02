@@ -38,24 +38,24 @@
     font-family: 'Inter', sans-serif; 
     background: var(--bg);
     color: var(--text);
-    padding: 1.5rem 1rem;
+    padding: 2rem 1rem;
     line-height: 1.6;
-    min-height: 100vh;
+    transition: background 0.3s;
   }
   h1 { 
     text-align: center; 
-    font-size: 2.2rem; 
+    font-size: 2.4rem; 
     font-weight: 600;
-    margin-bottom: 2rem;
+    margin-bottom: 2.5rem;
     color: var(--primary);
   }
   .year-selector { 
     text-align: center; 
-    margin-bottom: 1.5rem; 
+    margin-bottom: 1.8rem; 
   }
   .year-selector button { 
-    padding: 0.7rem 1.4rem; 
-    margin: 0 0.4rem; 
+    padding: 0.7rem 1.5rem; 
+    margin: 0 0.5rem; 
     border: 1px solid var(--border); 
     background: var(--card-bg); 
     color: var(--text); 
@@ -68,32 +68,31 @@
     background: var(--primary); 
     color: white; 
     border-color: var(--primary);
+    transform: translateY(-2px);
   }
   .year-selector input { 
     padding: 0.7rem; 
-    width: 100px; 
+    width: 110px; 
     text-align: center; 
     border: 1px solid var(--border); 
     background: var(--card-bg);
     border-radius: 12px; 
-    font-size: 1.1rem;
+    font-size: 1.2rem;
     font-weight: 500;
   }
-  /* CONTADORES COMPACTOS Y RESPONSIVE */
   .counters { 
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    display: flex; 
+    flex-wrap: wrap; 
+    justify-content: center; 
     gap: 0.8rem; 
     margin: 1.5rem 0;
-    justify-items: center;
   }
   .counter-box {
     background: var(--card-bg);
-    padding: 0.8rem 1rem;
+    padding: 0.7rem 0.9rem; 
     border-radius: 12px;
     box-shadow: var(--shadow);
-    width: 100%;
-    max-width: 180px;
+    min-width: 130px; 
     text-align: center;
     border: 1px solid var(--border);
     transition: transform 0.3s;
@@ -106,11 +105,11 @@
     font-weight: 500;
   }
   .counter-box strong { 
-    font-size: 1.6rem; 
+    font-size: 1.5rem; 
     font-weight: 700; 
   }
   .big-remaining {
-    font-size: 2rem !important; 
+    font-size: 1.9rem !important; 
     color: var(--primary);
     font-weight: 700;
   }
@@ -134,12 +133,11 @@
   .labels { 
     display: flex; 
     justify-content: center; 
-    gap: 1rem; 
+    gap: 1.2rem; 
     margin: 2rem 0; 
     flex-wrap: wrap; 
-    font-size: 0.92rem;
+    font-size: 0.95rem;
     font-weight: 500;
-    text-align: center;
   }
   .labels span { 
     display: flex; 
@@ -149,22 +147,25 @@
   .dot {
     width: 1rem; height: 1rem; border-radius: 50%; display: inline-block;
   }
+  /* MEJOR AJUSTE EN PANTALLA GRANDE: MÁXIMO 4 COLUMNAS */
   .calendar { 
     display: grid; 
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); 
-    gap: 1.5rem; 
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
+    gap: 1.8rem; 
+    max-width: 1400px; /* limita el ancho total */
+    margin: 0 auto; /* centra el grid */
   }
   .month { 
     background: var(--card-bg);
     border-radius: 20px; 
-    padding: 1.5rem; 
+    padding: 1.8rem; 
     box-shadow: var(--shadow);
     border: 1px solid var(--border);
   }
   .month h2 { 
     text-align: center; 
-    margin-bottom: 1rem; 
-    font-size: 1.4rem; 
+    margin-bottom: 1.2rem; 
+    font-size: 1.5rem; 
     font-weight: 600;
     color: var(--primary);
   }
@@ -172,7 +173,7 @@
     display: grid; 
     grid-template-columns: repeat(7, 1fr); 
     gap: 8px; 
-    font-size: 0.9rem; 
+    font-size: 0.92rem; 
   }
   .day { 
     aspect-ratio: 1/1;
@@ -229,17 +230,15 @@
   }
   .day.holiday-national:hover .tooltip,
   .day.holiday-local:hover .tooltip { opacity: 1; }
-  @media (max-width: 768px) {
-    h1 { font-size: 2rem; }
-    .calendar { grid-template-columns: 1fr; }
-    .counters { grid-template-columns: 1fr 1fr; gap: 0.8rem; }
-    .counter-box { min-width: auto; padding: 0.8rem; }
-    .big-remaining { font-size: 1.8rem; }
-    .labels { gap: 0.8rem; font-size: 0.9rem; }
+  @media (min-width: 1400px) {
+    .calendar { 
+      grid-template-columns: repeat(4, 1fr); /* máximo 4 columnas en pantallas grandes */
+    }
   }
-  @media (max-width: 480px) {
-    .counters { grid-template-columns: 1fr; }
-    .year-selector button { padding: 0.6rem 1.2rem; margin: 0 0.3rem; font-size: 0.9rem; }
+  @media (max-width: 768px) {
+    .calendar { grid-template-columns: 1fr; }
+    .counter-box { min-width: auto; padding: 0.7rem; }
+    .big-remaining { font-size: 2rem; }
   }
 </style>
 </head>
