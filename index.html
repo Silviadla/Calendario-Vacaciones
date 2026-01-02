@@ -5,76 +5,73 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Calendario Vacaciones León</title>
 <link rel="icon" href="playa.png" type="image/png" />
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --primary: #4e54c8;
-    --primary-light: #8f94fb;
-    --accent: #00d4aa;
-    --success: #4caf50;
-    --warning: #ff9800;
-    --danger: #f44336;
-    --text: #2d1b69;
-    --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    --card-bg: rgba(255, 255, 255, 0.85);
-    --card-shadow: 0 15px 35px rgba(50,50,93,.1), 0 5px 15px rgba(0,0,0,.08);
+    --bg: #ffffff;
+    --text: #1a1a1a;
+    --card-bg: #f9f9f9;
+    --border: #e0e0e0;
+    --primary: #4361ee;
+    --vacation: #4895ef;        /* azul suave */
+    --vacation-prev: #7209b7;   /* morado suave */
+    --medical: #06d6a0;         /* verde suave */
+    --holiday: #e0e0e0;
+    --weekend: #f0f0f0;
+    --shadow: 0 4px 12px rgba(0,0,0,0.05);
   }
   @media (prefers-color-scheme: dark) {
     :root {
-      --text: #e0e0ff;
-      --card-bg: rgba(30, 30, 46, 0.85);
-      --card-shadow: 0 15px 35px rgba(0,0,0,.4);
-      --bg-gradient: linear-gradient(135deg, #1e1e2e 0%, #2a1a5e 100%);
+      --bg: #121212;
+      --text: #e0e0e0;
+      --card-bg: #1e1e1e;
+      --border: #333;
+      --holiday: #2a2a2a;
+      --weekend: #252525;
     }
   }
   * { box-sizing: border-box; margin:0; padding:0; }
   body { 
-    font-family: 'Poppins', sans-serif; 
-    background: var(--bg-gradient);
-    background-attachment: fixed;
+    font-family: 'Inter', sans-serif; 
+    background: var(--bg); 
     color: var(--text);
-    min-height: 100vh;
-    padding: 1.5rem;
+    padding: 2rem 1rem;
+    line-height: 1.6;
   }
   h1 { 
     text-align: center; 
-    font-size: 2.8rem; 
-    font-weight: 700; 
-    margin-bottom: 1rem;
-    background: linear-gradient(to right, #8f94fb, #4e54c8);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    text-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    font-size: 2.2rem; 
+    font-weight: 600;
+    margin-bottom: 2rem;
   }
   .year-selector { 
     text-align: center; 
     margin-bottom: 2rem; 
   }
   .year-selector button { 
-    padding: 0.8rem 1.8rem; 
-    margin: 0 0.8rem; 
-    border: none; 
-    background: var(--primary); 
-    color: white; 
-    border-radius: 50px; 
+    padding: 0.7rem 1.5rem; 
+    margin: 0 0.5rem; 
+    border: 1px solid var(--border); 
+    background: var(--card-bg); 
+    color: var(--text); 
+    border-radius: 8px; 
     cursor: pointer; 
-    font-weight: 600;
-    box-shadow: 0 6px 15px rgba(78,84,200,.4);
-    transition: all 0.3s;
+    font-weight: 500;
+    transition: all 0.2s;
   }
   .year-selector button:hover { 
-    transform: translateY(-3px); 
-    box-shadow: 0 10px 25px rgba(78,84,200,.6); 
+    background: var(--primary); 
+    color: white; 
+    border-color: var(--primary);
   }
   .year-selector input { 
-    padding: 0.8rem; 
+    padding: 0.7rem; 
     width: 100px; 
     text-align: center; 
-    border-radius: 50px; 
-    border: none; 
-    font-size: 1.2rem; 
-    font-weight: 600;
-    box-shadow: inset 0 4px 10px rgba(0,0,0,0.1);
+    border: 1px solid var(--border); 
+    background: var(--card-bg);
+    border-radius: 8px; 
+    font-size: 1.1rem;
   }
   .counters { 
     display: flex; 
@@ -85,186 +82,126 @@
   }
   .counter-box {
     background: var(--card-bg);
-    backdrop-filter: blur(10px);
-    padding: 1.8rem;
-    border-radius: 20px;
-    box-shadow: var(--card-shadow);
-    min-width: 240px;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    min-width: 200px;
     text-align: center;
-    transition: all 0.4s;
-    border: 1px solid rgba(255,255,255,0.2);
-  }
-  .counter-box:hover { 
-    transform: translateY(-10px); 
-    box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+    border: 1px solid var(--border);
   }
   .counter-box div { 
-    font-size: 1rem; 
+    font-size: 0.95rem; 
     opacity: 0.8; 
-    margin-bottom: 0.8rem;
-    font-weight: 500;
+    margin-bottom: 0.5rem;
   }
   .counter-box strong { 
-    font-size: 2.4rem; 
+    font-size: 2rem; 
     font-weight: 700; 
   }
   .big-remaining {
-    font-size: 3.5rem !important;
-    background: linear-gradient(to right, var(--accent), #00b894);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+    font-size: 2.8rem !important;
+    color: var(--primary);
   }
   #resetYear {
     display: block;
     margin: 2rem auto;
-    padding: 1rem 2.5rem;
-    background: var(--danger);
+    padding: 0.8rem 2rem;
+    background: #e63946;
     color: white;
     border: none;
-    border-radius: 50px;
+    border-radius: 8px;
     cursor: pointer;
-    font-size: 1.1rem;
-    font-weight: 600;
-    box-shadow: 0 8px 20px rgba(244,67,54,.4);
-    transition: all 0.3s;
+    font-weight: 500;
   }
-  #resetYear:hover { 
-    transform: translateY(-3px); 
-    box-shadow: 0 12px 30px rgba(244,67,54,.6); 
-  }
+  #resetYear:hover { background: #d00000; }
   .labels { 
     display: flex; 
     justify-content: center; 
     gap: 1.5rem; 
-    margin: 2.5rem 0; 
+    margin: 2rem 0; 
     flex-wrap: wrap; 
-    font-weight: 500;
+    font-size: 0.95rem;
+    opacity: 0.9;
   }
   .labels span { 
-    display: inline-flex; 
+    display: flex; 
     align-items: center; 
-    gap: 0.8rem; 
-    padding: 0.6rem 1.2rem;
-    background: var(--card-bg);
-    border-radius: 30px;
-    backdrop-filter: blur(8px);
-    box-shadow: var(--card-shadow);
+    gap: 0.6rem; 
   }
   .dot {
-    width: 1.4rem; height: 1.4rem; border-radius: 50%; display: inline-block;
+    width: 1rem; height: 1rem; border-radius: 50%; display: inline-block;
   }
   .calendar { 
     display: grid; 
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); 
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
     gap: 1.5rem; 
   }
   .month { 
     background: var(--card-bg);
-    backdrop-filter: blur(12px);
-    border-radius: 24px; 
+    border-radius: 16px; 
     padding: 1.5rem; 
-    box-shadow: var(--card-shadow);
-    border: 1px solid rgba(255,255,255,0.3);
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
   }
   .month h2 { 
     text-align: center; 
     margin-bottom: 1rem; 
-    font-size: 1.6rem; 
+    font-size: 1.4rem; 
     font-weight: 600;
-    color: var(--primary);
   }
   .days { 
     display: grid; 
     grid-template-columns: repeat(7, 1fr); 
-    gap: 8px; 
+    gap: 6px; 
     font-size: 0.9rem; 
-    font-weight: 500;
   }
   .day { 
     aspect-ratio: 1/1;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 16px;
+    border-radius: 12px;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.2s;
     font-weight: 500;
-    position: relative;
-    overflow: hidden;
+    border: 1px solid transparent;
   }
   .day:hover { 
-    transform: scale(1.12); 
-    z-index: 10; 
-    box-shadow: 0 10px 25px rgba(0,0,0,0.3); 
+    transform: scale(1.08); 
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1); 
   }
-  .vacation { 
-    background: linear-gradient(135deg, #ffb347, #ff8c00); 
-    color: white; 
-    animation: pulse 0.6s ease;
-  }
-  /* COLOR DIFERENTE PARA AÑO ANTERIOR: MORADO ELEGANTE */
-  .vacation-prev { 
-    background: linear-gradient(135deg, #a78bfa, #6b46c1); 
-    color: white; 
-    font-weight: bold; 
-    animation: pulse 0.6s ease;
-  }
-  .medical { 
-    background: linear-gradient(135deg, #4facfe, #00f2fe); 
-    color: white; 
-    animation: pulse 0.6s ease;
-  }
-  .holiday-national { background: linear-gradient(135deg, #ff6b6b, #f44336); color: white; }
-  .holiday-local { background: linear-gradient(135deg, #a8e6cf, #88d8a3); color: #2d6a4f; }
-  .weekend { background: rgba(200,200,200,0.3); opacity: 0.7; }
+  .vacation { background: var(--vacation); color: white; }
+  .vacation-prev { background: var(--vacation-prev); color: white; font-weight: bold; }
+  .medical { background: var(--medical); color: white; }
+  .holiday-national, .holiday-local { background: var(--holiday); opacity: 0.8; }
+  .weekend { background: var(--weekend); }
   .today { 
-    border: 5px solid #8f94fb; 
-    font-weight: bold; 
-    animation: glow 2s infinite alternate;
-    box-shadow: 0 0 25px rgba(143,148,251,.6);
+    border: 3px solid var(--primary) !important; 
+    font-weight: bold;
   }
   .tooltip {
     position: absolute;
     bottom: 100%;
     left: 50%;
     transform: translateX(-50%);
-    background: rgba(0,0,0,0.9);
+    background: #333;
     color: white;
-    padding: 0.8rem 1.2rem;
-    border-radius: 12px;
-    font-size: 0.85rem;
+    padding: 0.6rem 1rem;
+    border-radius: 8px;
+    font-size: 0.8rem;
     white-space: nowrap;
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.3s;
-    z-index: 20;
-    margin-bottom: 10px;
-  }
-  .tooltip::after {
-    content: '';
-    position: absolute;
-    top: 100%;
-    left: 50%;
-    margin-left: -8px;
-    border: 8px solid transparent;
-    border-top-color: rgba(0,0,0,0.9);
+    transition: opacity 0.2s;
+    z-index: 10;
+    margin-bottom: 8px;
   }
   .day.holiday-national:hover .tooltip,
   .day.holiday-local:hover .tooltip { opacity: 1; }
-  @keyframes pulse { 
-    0% { transform: scale(1); } 
-    50% { transform: scale(1.15); } 
-    100% { transform: scale(1); } 
-  }
-  @keyframes glow { 
-    from { box-shadow: 0 0 15px rgba(143,148,251,.6); } 
-    to { box-shadow: 0 0 30px rgba(143,148,251,1); } 
-  }
   @media (max-width: 768px) {
-    h1 { font-size: 2.2rem; }
     .calendar { grid-template-columns: 1fr; }
-    .counter-box { min-width: auto; padding: 1.4rem; }
-    .big-remaining { font-size: 2.8rem; }
+    .counter-box { min-width: auto; }
+    h1 { font-size: 2rem; }
   }
 </style>
 </head>
@@ -295,12 +232,11 @@
 </div>
 <button id="resetYear">Borrar todas las marcas de este año</button>
 <div class="labels">
-  <span><span class="dot" style="background:#ffb347;"></span> Vacaciones año actual</span>
-  <span><span class="dot" style="background:#a78bfa;"></span> Vacaciones año anterior (AN)</span>
-  <span><span class="dot" style="background:#4facfe;"></span> Médico</span>
-  <span><span class="dot" style="background:#f44336;"></span> Festivo Nacional</span>
-  <span><span class="dot" style="background:#88d8a3;"></span> Festivo Local / Trasladado</span>
-  <span><span class="dot" style="background:#c8c8c8;"></span> Fin de semana</span>
+  <span><span class="dot" style="background:var(--vacation);"></span> Vacaciones año actual</span>
+  <span><span class="dot" style="background:var(--vacation-prev);"></span> Vacaciones año anterior (AN)</span>
+  <span><span class="dot" style="background:var(--medical);"></span> Médico</span>
+  <span><span class="dot" style="background:var(--holiday);"></span> Festivo</span>
+  <span><span class="dot" style="background:var(--weekend);"></span> Fin de semana</span>
 </div>
 <div class="calendar" id="calendar"></div>
 
@@ -472,22 +408,18 @@ function createCalendar(year){
 
       if (dateKey === getTodayKey()) dayDiv.classList.add("today");
 
-      if (nationalHolidays.has(dateKey)) {
+      if (nationalHolidays.has(dateKey) || localHolidays.has(dateKey)) {
         dayDiv.classList.add("holiday-national");
         const tooltip = document.createElement("div");
         tooltip.className = "tooltip";
-        tooltip.textContent = "Festivo Nacional";
-        dayDiv.appendChild(tooltip);
-      } else if (localHolidays.has(dateKey)) {
-        dayDiv.classList.add("holiday-local");
-        const tooltip = document.createElement("div");
-        tooltip.className = "tooltip";
-        let name = "Festivo Local";
-        if (dateKey.includes("-10-")) name = "San Froilán" + (dateKey.endsWith("-6") ? " (trasladado)" : "");
-        else if (dateKey === `${year}-4-23`) name = "Día de Castilla y León";
-        else if (dateKey === `${year}-6-24`) name = "San Juan";
-        else if (dateKey === `${year}-12-7`) name = "Día de la Constitución (trasladado)";
-        else if (dateKey === `${year}-11-2`) name = "Todos los Santos (trasladado)";
+        let name = "Festivo";
+        if (localHolidays.has(dateKey)) {
+          if (dateKey.includes("-10-")) name = "San Froilán" + (dateKey.endsWith("-6") ? " (trasladado)" : "");
+          else if (dateKey === `${year}-4-23`) name = "Día de Castilla y León";
+          else if (dateKey === `${year}-6-24`) name = "San Juan";
+          else if (dateKey === `${year}-12-7`) name = "Constitución (trasladado)";
+          else if (dateKey === `${year}-11-2`) name = "Todos los Santos (trasladado)";
+        }
         tooltip.textContent = name;
         dayDiv.appendChild(tooltip);
       } else if (dayOfWeek === 0 || dayOfWeek === 6) {
