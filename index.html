@@ -80,7 +80,6 @@ function getFixedHolidays(year){
   ];
   return fixed.map(f=>{
     let date = new Date(year, f.month-1, f.day);
-    // Traslado del 12 octubre si cae domingo (nacional)
     if (f.month === 10 && f.day === 12 && date.getDay() === 0) date.setDate(13);
     return `${year}-${date.getMonth()+1}-${date.getDate()}`;
   });
@@ -107,15 +106,22 @@ function getLocalAndTransferredHolidays(year){
   holidays.add(`${year}-4-23`); // Día de Castilla y León
   holidays.add(`${year}-6-24`); // San Juan
 
+  // San Froilán (5 octubre) + traslado si cae domingo
+  let sanFroilan = new Date(year, 9, 5); // octubre = mes 9
+  if (sanFroilan.getDay() === 0) { // domingo
+    sanFroilan.setDate(6); // lunes
+  }
+  holidays.add(`${year}-${sanFroilan.getMonth()+1}-${sanFroilan.getDate()}`);
+
   // Traslados autonómicos Castilla y León
   const dec6 = new Date(year, 11, 6); // 6 diciembre
-  if (dec6.getDay() === 0) { // domingo
-    holidays.add(`${year}-12-7`); // trasladado al lunes 7
+  if (dec6.getDay() === 0) {
+    holidays.add(`${year}-12-7`);
   }
 
   const nov1 = new Date(year, 10, 1); // 1 noviembre
-  if (nov1.getDay() === 0) { // domingo
-    holidays.add(`${year}-11-2`); // trasladado al lunes 2
+  if (nov1.getDay() === 0) {
+    holidays.add(`${year}-11-2`);
   }
 
   return holidays;
@@ -128,7 +134,7 @@ function getHolidaySets(year){
   };
 }
 
-// --- PERSISTENCE ---
+// --- PERSISTENCE, CARRY OVER, CALENDAR, etc. (igual que antes) ---
 function loadData() {
   const saved = localStorage.getItem('calendarData');
   if (saved) {
@@ -158,7 +164,6 @@ function saveData() {
   localStorage.setItem('calendarData', JSON.stringify(toSave));
 }
 
-// --- CARRY OVER ---
 function calculateCarryOver(year) {
   if (carryOver[year] !== undefined) return carryOver[year];
   if (!yearData[year]) {
@@ -180,7 +185,6 @@ function ensureCarryOverUpTo(prevYear) {
   }
 }
 
-// --- CALENDAR ---
 function createCalendar(year){
   currentYear = year;
   yearInput.value = year;
@@ -264,7 +268,6 @@ function getTodayKey(){
   return `${today.getFullYear()}-${today.getMonth()+1}-${today.getDate()}`;
 }
 
-// --- CLICK DAY ---
 function handleDayClick(dayDiv, year, month, day){
   const dateKey = `${year}-${month+1}-${day}`;
   const data = yearData[year];
@@ -358,7 +361,6 @@ function handleDayClick(dayDiv, year, month, day){
   saveData();
 }
 
-// --- CONTADORES ---
 function updateCounters(){
   ensureCarryOverUpTo(currentYear - 1);
   const data = yearData[currentYear] || {vacation: new Set(), vacationPrev: new Set(), medical: new Set()};
@@ -371,7 +373,6 @@ function updateCounters(){
   remaining.textContent = `Vacaciones totales disponibles: ${getAvailableVacationDays()}`;
 }
 
-// Inicialización
 loadData();
 document.getElementById("prevYear").addEventListener("click", () => createCalendar(currentYear - 1));
 document.getElementById("nextYear").addEventListener("click", () => createCalendar(currentYear + 1));
