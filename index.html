@@ -13,11 +13,14 @@ h1{text-align:center}
 .month{background:#fff;border-radius:10px;padding:.5rem;box-shadow:0 2px 5px rgba(0,0,0,.1)}
 .month h2{text-align:center;margin:0}
 .days{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;font-size:.8rem}
-.day{border:1px solid #ccc;padding:.4rem;text-align:center;cursor:pointer;border-radius:4px}
+.day{border:1px solid #ccc;padding:.4rem;text-align:center;border-radius:4px}
+.day.clickable{cursor:pointer}
 .vacation{background:#FFCC80}
 .vacation-prev{background:#FFA726;font-weight:bold}
 .medical{background:#90CAF9}
 .weekend{background:#EEE}
+.disabled{opacity:.4;cursor:not-allowed}
+button{padding:.4rem .7rem}
 </style>
 </head>
 
@@ -37,52 +40,68 @@ h1{text-align:center}
   <p id="remaining"></p>
 </div>
 
+<div style="text-align:center;margin-bottom:1rem">
+  <button onclick="printSummary()">📄 Resumen anual</button>
+</div>
+
 <div class="calendar" id="calendar"></div>
 
 <script>
-// ---------- CONFIG ----------
+// ---------------- CONFIG ----------------
 const START_YEAR = 2025;
-const vacationLimit = 23;
+const VACATION_LIMIT = 23;
 const dayNames=["L","M","X","J","V","S","D"];
 const months=["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 
 let currentYear = Math.max(new Date().getFullYear(), START_YEAR);
 let yearData = {};
-let carryOver = {};
 
-// ---------- LOCAL STORAGE ----------
+// ---------------- STORAGE ----------------
 function saveData(){
-  localStorage.setItem("calendarData",JSON.stringify({yearData,carryOver}));
+  const data={};
+  for(const y in yearData){
+    data[y]={
+      vacation:[...yearData[y].vacation],
+      medical:[...yearData[y].medical],
+      vacationPrev:[...yearData[y].vacationPrev]
+    };
+  }
+  localStorage.setItem("calendarData",JSON.stringify(data));
 }
 
 function loadData(){
-  const saved = localStorage.getItem("calendarData");
+  const saved=localStorage.getItem("calendarData");
   if(!saved) return;
-  const data = JSON.parse(saved);
-  yearData = data.yearData || {};
-  carryOver = data.carryOver || {};
-}
-
-// ---------- LIMPIEZA (SOLO 2 AÑOS) ----------
-function cleanOldYears(year){
-  for(const y in yearData){
-    if(y < year-1) delete yearData[y];
-  }
-  for(const y in carryOver){
-    if(y < year-1) delete carryOver[y];
+  const raw=JSON.parse(saved);
+  for(const y in raw){
+    yearData[y]={
+      vacation:new Set(raw[y].vacation),
+      vacationPrev:new Set(raw[y].vacationPrev),
+      medical:new Set(raw[y].medical)
+    };
   }
 }
 
-// ---------- CALENDARIO ----------
+// ---------------- LOGICA AN ----------------
+function carryFromPrevious(year){
+  const prev=year-1;
+  if(prev<START_YEAR||!yearData[prev]) return 0;
+  return Math.max(0,VACATION_LIMIT-yearData[prev].vacation.size);
+}
+
+function usedPrev(year){
+  return yearData[year].vacationPrev.size;
+}
+
+// ---------------- CALENDARIO ----------------
 function createCalendar(year){
-  if(year < START_YEAR) year = START_YEAR;
-  currentYear = year;
-  yearInput.value = year;
+  if(year<START_YEAR) year=START_YEAR;
+  currentYear=year;
+  yearInput.value=year;
 
-  cleanOldYears(year);
-
-  if(!yearData[year]) yearData[year]={vacation:new Set(),medical:new Set()};
-  if(!carryOver[year-1]) carryOver[year-1]=0;
+  if(!yearData[year]){
+    yearData[year]={vacation:new Set(),vacationPrev:new Set(),medical:new Set()};
+  }
 
   const calendar=document.getElementById("calendar");
   calendar.innerHTML="";
@@ -106,15 +125,24 @@ function createCalendar(year){
 
     for(let d=1;d<=total;d++){
       const div=document.createElement("div");
-      div.className="day"; div.textContent=d;
+      div.className="day";
+      div.textContent=d;
       const key=`${year}-${m+1}-${d}`;
       div.dataset.date=key;
 
       const dow=new Date(year,m,d).getDay();
-      if(dow===0||dow===6) div.classList.add("weekend");
-      else div.onclick=()=>handleDayClick(div,year,m,d);
+      if(dow!==0&&dow!==6){
+        div.classList.add("clickable");
+        div.onclick=()=>handleClick(div,key);
+      }else{
+        div.classList.add("weekend","disabled");
+      }
 
       if(yearData[year].vacation.has(key)) div.classList.add("vacation");
+      if(yearData[year].vacationPrev.has(key)){
+        div.classList.add("vacation-prev");
+        div.title="Vacaciones del año anterior";
+      }
       if(yearData[year].medical.has(key)) div.classList.add("medical");
 
       days.appendChild(div);
@@ -128,58 +156,33 @@ function createCalendar(year){
   saveData();
 }
 
-// ---------- CLICK ----------
-function handleDayClick(div,year,month,day){
-  const key=`${year}-${month+1}-${day}`;
-  const dow=new Date(year,month,day).getDay();
+// ---------------- CLICK ----------------
+function handleClick(div,key){
+  const y=currentYear;
 
   if(div.classList.contains("vacation")||div.classList.contains("vacation-prev")||div.classList.contains("medical")){
-    div.classList.remove("vacation","vacation-prev","medical");
-    yearData[year].vacation.delete(key);
-    yearData[year].medical.delete(key);
-    if(div.classList.contains("vacation-prev")) carryOver[year-1]++;
+    yearData[y].vacation.delete(key);
+    yearData[y].vacationPrev.delete(key);
+    yearData[y].medical.delete(key);
+    div.className="day clickable";
   }else{
     const type=prompt("v = vacaciones | m = médico");
     if(type==="v"){
-      let usePrev=false;
-      if(year>START_YEAR && carryOver[year-1]>0){
-        usePrev=confirm(`Tienes ${carryOver[year-1]} días del año anterior. ¿Usar uno?`);
-      }
-
-      let markWeek=false;
-      if(dow>=1&&dow<=5) markWeek=confirm("¿Coger vacaciones hasta el viernes?");
-
-      if(markWeek){
-        for(let i=dow;i<=5;i++){
-          const date=new Date(year,month,day+(i-dow));
-          const k=`${date.getFullYear()}-${date.getMonth()+1}-${date.getDate()}`;
-          const el=document.querySelector(`.day[data-date='${k}']`);
-          if(!el) continue;
-
-          if(usePrev && carryOver[year-1]>0){
-            carryOver[year-1]--;
-            el.classList.add("vacation-prev");
-            el.textContent=date.getDate()+" AN";
-          }else{
-            yearData[year].vacation.add(k);
-            el.classList.add("vacation");
-          }
+      if(yearData[y].vacation.size>=VACATION_LIMIT){
+        if(usedPrev(y)>=carryFromPrevious(y)){
+          alert("No te quedan días disponibles.");
+          return;
         }
+        yearData[y].vacationPrev.add(key);
+        div.classList.add("vacation-prev");
       }else{
-        if(usePrev){
-          carryOver[year-1]--;
-          div.classList.add("vacation-prev");
-          div.textContent+=" AN";
-        }else{
-          div.classList.add("vacation");
-          yearData[year].vacation.add(key);
-        }
+        yearData[y].vacation.add(key);
+        div.classList.add("vacation");
       }
     }
-
     if(type==="m"){
+      yearData[y].medical.add(key);
       div.classList.add("medical");
-      yearData[year].medical.add(key);
     }
   }
 
@@ -187,22 +190,39 @@ function handleDayClick(div,year,month,day){
   saveData();
 }
 
-// ---------- CONTADORES ----------
+// ---------------- CONTADORES ----------------
 function updateCounters(){
-  const d=yearData[currentYear];
-  const prev = carryOver[currentYear-1] || 0;
-  vacationCount.textContent=`Vacaciones usadas: ${d.vacation.size}`;
-  vacationPrevCount.textContent=`Vacaciones año anterior: ${prev}`;
-  medicalCount.textContent=`Días médicos: ${d.medical.size}`;
-  remaining.textContent=`Vacaciones restantes: ${vacationLimit-d.vacation.size+prev}`;
+  const used=yearData[currentYear].vacation.size;
+  const prevAvail=carryFromPrevious(currentYear);
+  const prevUsed=usedPrev(currentYear);
+  const total=VACATION_LIMIT+prevAvail;
+  const remaining=total-used-prevUsed;
+
+  vacationCount.textContent=`Vacaciones año actual usadas: ${used}`;
+  vacationPrevCount.textContent=`Vacaciones año anterior usadas: ${prevUsed} / ${prevAvail}`;
+  medicalCount.textContent=`Días médicos: ${yearData[currentYear].medical.size}`;
+  remaining.textContent=`Vacaciones restantes: ${remaining}`;
 }
 
-// ---------- CONTROLES ----------
+// ---------------- PDF ----------------
+function printSummary(){
+  const y=currentYear;
+  const win=window.open("","_blank");
+  win.document.write(`
+    <h1>Resumen Vacaciones ${y}</h1>
+    <p>Vacaciones año: ${yearData[y].vacation.size}</p>
+    <p>Vacaciones año anterior usadas: ${usedPrev(y)}</p>
+    <p>Días médicos: ${yearData[y].medical.size}</p>
+  `);
+  win.print();
+}
+
+// ---------------- CONTROLES ----------------
 prevYear.onclick=()=>createCalendar(currentYear-1);
 nextYear.onclick=()=>createCalendar(currentYear+1);
 yearInput.onchange=e=>createCalendar(+e.target.value);
 
-// ---------- INIT ----------
+// ---------------- INIT ----------------
 loadData();
 createCalendar(currentYear);
 </script>
