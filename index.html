@@ -148,16 +148,10 @@
     width: 1rem; height: 1rem; border-radius: 50%; display: inline-block;
   }
   .calendar { 
-    display: grid; 
-    grid-template-columns: repeat(auto-fill, minmax(310px, 1fr)); 
-    gap: 1.8rem; 
-    max-width: 1400px;
-    margin: 0 auto;
-  }
-  @media (min-width: 1400px) {
-    .calendar { 
-      grid-template-columns: repeat(4, 1fr);
-    }
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 1.8rem;
+    width: 100%;
   }
   .month { 
     background: var(--card-bg);
@@ -180,7 +174,7 @@
     font-size: 0.92rem; 
   }
   .day { 
-    height: 48px; /* Altura fija */
+    height: 48px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -208,7 +202,6 @@
     font-weight: bold;
     box-shadow: 0 0 20px rgba(76, 110, 245, 0.4);
   }
-  /* Badge para "AN" - superpuesto sin afectar tamaño */
   .badge-an {
     position: absolute;
     top: 4px;
@@ -308,7 +301,6 @@ const months = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto
 let yearData = {};      
 let carryOver = {};     
 
-// --- HOLIDAYS --- (igual que antes)
 function getFixedHolidays(year){
   const fixed = [
     {month:1,day:1},{month:1,day:6},{month:5,day:1},
@@ -461,7 +453,6 @@ function createCalendar(year){
 
       if (dateKey === getTodayKey()) dayDiv.classList.add("today");
 
-      // Número del día
       const numberSpan = document.createElement("span");
       numberSpan.textContent = d;
       dayDiv.appendChild(numberSpan);
@@ -490,15 +481,12 @@ function createCalendar(year){
         dayDiv.addEventListener("click", () => handleDayClick(dayDiv, year, m, d));
       }
 
-      // Vacaciones año actual
       if (yearData[year].vacation.has(dateKey)) {
         dayDiv.classList.add("vacation");
       }
-      // Médico
       if (yearData[year].medical.has(dateKey)) {
         dayDiv.classList.add("medical");
       }
-      // Vacaciones año anterior - badge superpuesto
       if (yearData[year].vacationPrev.has(dateKey)) {
         dayDiv.classList.add("vacation-prev");
         const badge = document.createElement("div");
@@ -532,19 +520,13 @@ function handleDayClick(dayDiv, year, month, day){
   const dateKey = `${year}-${month+1}-${day}`;
   const data = yearData[year];
 
-  // Limpiar clases y badge
   dayDiv.classList.remove("vacation", "vacation-prev", "medical");
   const badge = dayDiv.querySelector(".badge-an");
   if (badge) badge.remove();
+
   data.vacation.delete(dateKey);
   data.vacationPrev.delete(dateKey);
   data.medical.delete(dateKey);
-
-  if (dayDiv.classList.contains("vacation") || dayDiv.classList.contains("vacation-prev") || dayDiv.classList.contains("medical")) {
-    updateCounters();
-    saveData();
-    return;
-  }
 
   const type = prompt("¿Qué quieres marcar? (v = vacaciones, m = médico)").toLowerCase().trim();
   if (type !== "v" && type !== "m") return;
