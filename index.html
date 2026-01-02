@@ -71,7 +71,7 @@ const months = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto
 let yearData = {};      
 let carryOver = {};     
 
-// --- HOLIDAYS ---
+// --- HOLIDAYS --- (igual que antes)
 function getFixedHolidays(year){
   const fixed = [
     {month:1,day:1},{month:1,day:6},{month:5,day:1},
@@ -142,7 +142,7 @@ function saveData() {
   localStorage.setItem('calendarData', JSON.stringify(toSave));
 }
 
-// --- CARRY OVER RECURSIVO ---
+// --- CARRY OVER ---
 function calculateCarryOver(year) {
   if (carryOver[year] !== undefined) return carryOver[year];
   if (!yearData[year]) {
@@ -158,12 +158,20 @@ function calculateCarryOver(year) {
   return carryOver[year];
 }
 
+// Asegurar que todos los carryOver desde 2025 hasta prevYear estén calculados
+function ensureCarryOverUpTo(prevYear) {
+  for (let y = 2025; y <= prevYear; y++) {
+    calculateCarryOver(y);
+  }
+}
+
 // --- CALENDAR ---
 function createCalendar(year){
   currentYear = year;
   yearInput.value = year;
 
-  calculateCarryOver(year - 1);
+  // Calcular toda la cadena desde 2025 hasta el año anterior
+  ensureCarryOverUpTo(year - 1);
 
   const holidays = getHolidaySets(year);
   const nationalHolidays = holidays.national;
@@ -253,8 +261,7 @@ function handleDayClick(dayDiv, year, month, day){
     data.vacationPrev.delete(dateKey);
     data.medical.delete(dateKey);
     dayDiv.textContent = day;
-    // Recalcular carryOver después de borrar (puede afectar años siguientes)
-    delete carryOver[year]; // forzar recalculo
+    delete carryOver[year]; // invalidar para recalcular cadena
     updateCounters();
     saveData();
     return;
@@ -332,14 +339,14 @@ function handleDayClick(dayDiv, year, month, day){
     }
   });
 
-  delete carryOver[year]; // forzar recalculo para años siguientes
+  delete carryOver[year]; // invalidar para años siguientes
   updateCounters();
   saveData();
 }
 
 // --- CONTADORES ---
 function updateCounters(){
-  calculateCarryOver(currentYear - 1); // asegurar siempre actualizado
+  ensureCarryOverUpTo(currentYear - 1);
   const data = yearData[currentYear] || {vacation: new Set(), vacationPrev: new Set(), medical: new Set()};
   const carry = carryOver[currentYear - 1] || 0;
   const usedPrev = data.vacationPrev.size;
