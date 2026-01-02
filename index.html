@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Calendario Vacaciones</title>
-<link rel="icon" href="playa.png" type="image/png">
+<link rel="icon" href="playa.png" type="image/png" />
 <style>
 *{box-sizing:border-box}
-body{font-family:Arial,sans-serif;background:#f0f8ff;margin:0;padding:1rem}
+body{font-family:Arial,sans-serif;margin:0;padding:1rem;background:#f0f8ff}
 h1{text-align:center}
 .year-selector,.counters{text-align:center;margin-bottom:1rem}
 .calendar{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:1rem}
@@ -22,6 +22,9 @@ h1{text-align:center}
 .holiday-local{background:#E1BEE7}
 .weekend{background:#EEE}
 .today{border:2px solid #3f51b5}
+.labels{display:flex;justify-content:center;gap:1rem;flex-wrap:wrap}
+.labels span{display:flex;align-items:center;gap:.3rem}
+.labels span span{width:1rem;height:1rem;border-radius:50%}
 </style>
 </head>
 
@@ -46,14 +49,14 @@ h1{text-align:center}
 <script>
 // ---------------- CONFIG ----------------
 const vacationLimit = 23;
-const dayNames=["L","M","X","J","V","S","D"];
-const months=["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+const dayNames = ["L","M","X","J","V","S","D"];
+const months = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 
-let currentYear=new Date().getFullYear();
-let yearData={};
-let carryOver={};
+let currentYear = new Date().getFullYear();
+let yearData = {};
+let carryOver = {};
 
-// ---------------- LOCAL STORAGE ----------------
+// ---------------- LOCAL STORAGE (BD) ----------------
 function saveData(){
   const data={yearData:{},carryOver};
   for(const y in yearData){
@@ -79,18 +82,23 @@ function loadData(){
 }
 
 // ---------------- FESTIVOS ----------------
+function getFixedHolidays(y){
+  return [
+    `${y}-1-1`,`${y}-1-6`,`${y}-5-1`,`${y}-8-15`,
+    `${y}-10-12`,`${y}-11-1`,`${y}-12-6`,
+    `${y}-12-8`,`${y}-12-25`
+  ];
+}
 function getHolidaySets(y){
-  return {
-    national:new Set([`${y}-1-1`,`${y}-1-6`,`${y}-5-1`,`${y}-8-15`,`${y}-10-12`,`${y}-11-1`,`${y}-12-6`,`${y}-12-8`,`${y}-12-25`]),
-    local:new Set()
-  };
+  return {national:new Set(getFixedHolidays(y)),local:new Set()};
 }
 
 // ---------------- CALENDARIO ----------------
 function createCalendar(year){
   currentYear=year;
-  yearInput.value=year;
+  document.getElementById("yearInput").value=year;
   const {national,local}=getHolidaySets(year);
+
   if(!yearData[year]) yearData[year]={vacation:new Set(),medical:new Set()};
 
   const calendar=document.getElementById("calendar");
@@ -99,15 +107,17 @@ function createCalendar(year){
   for(let m=0;m<12;m++){
     const first=new Date(year,m,1).getDay();
     const total=new Date(year,m+1,0).getDate();
-    const month=document.createElement("div");
-    month.className="month";
-    month.innerHTML=`<h2>${months[m]}</h2>`;
+    const monthDiv=document.createElement("div");
+    monthDiv.className="month";
+    monthDiv.innerHTML=`<h2>${months[m]}</h2>`;
     const days=document.createElement("div");
     days.className="days";
 
     dayNames.forEach(d=>{
       const l=document.createElement("div");
-      l.className="day"; l.style.fontWeight="bold"; l.textContent=d;
+      l.className="day";
+      l.style.fontWeight="bold";
+      l.textContent=d;
       days.appendChild(l);
     });
 
@@ -115,14 +125,15 @@ function createCalendar(year){
 
     for(let d=1;d<=total;d++){
       const div=document.createElement("div");
-      div.className="day"; div.textContent=d;
+      div.className="day";
+      div.textContent=d;
       const key=`${year}-${m+1}-${d}`;
       div.dataset.date=key;
 
       const dow=new Date(year,m,d).getDay();
       if(national.has(key)) div.classList.add("holiday-national");
       else if(dow===0||dow===6) div.classList.add("weekend");
-      else div.onclick=()=>handleDayClick(div,year,m,d);
+      else div.onclick=()=>handleDayClick(div,key);
 
       if(yearData[year].vacation.has(key)) div.classList.add("vacation");
       if(yearData[year].medical.has(key)) div.classList.add("medical");
@@ -130,62 +141,24 @@ function createCalendar(year){
       days.appendChild(div);
     }
 
-    month.appendChild(days);
-    calendar.appendChild(month);
+    monthDiv.appendChild(days);
+    calendar.appendChild(monthDiv);
   }
   updateCounters();
   saveData();
 }
 
 // ---------------- CLICK ----------------
-function handleDayClick(div,year,month,day){
-  const key=`${year}-${month+1}-${day}`;
-  const dow=new Date(year,month,day).getDay();
-
-  if(div.classList.contains("vacation")||div.classList.contains("vacation-prev")||div.classList.contains("medical")){
-    div.classList.remove("vacation","vacation-prev","medical");
-    yearData[year].vacation.delete(key);
-    yearData[year].medical.delete(key);
-    if(div.classList.contains("vacation-prev")) carryOver[year-1]++;
+function handleDayClick(div,key){
+  const y=currentYear;
+  if(div.classList.contains("vacation")||div.classList.contains("medical")){
+    div.classList.remove("vacation","medical");
+    yearData[y].vacation.delete(key);
+    yearData[y].medical.delete(key);
   }else{
     const type=prompt("v = vacaciones | m = médico");
-    if(type==="v"){
-      let usePrev=false;
-      if(carryOver[year-1]>0) usePrev=confirm(`Tienes ${carryOver[year-1]} días del año anterior. ¿Usar uno?`);
-
-      let markWeek=false;
-      if(dow>=1&&dow<=5) markWeek=confirm("¿Coger vacaciones hasta el viernes?");
-
-      if(markWeek){
-        for(let i=dow;i<=5;i++){
-          const date=new Date(year,month,day+(i-dow));
-          const k=`${date.getFullYear()}-${date.getMonth()+1}-${date.getDate()}`;
-          const el=document.querySelector(`.day[data-date='${k}']`);
-          if(!el) continue;
-          if(usePrev&&carryOver[year-1]>0){
-            carryOver[year-1]--;
-            el.classList.add("vacation-prev");
-            el.textContent=date.getDate()+" AN";
-          }else{
-            yearData[year].vacation.add(k);
-            el.classList.add("vacation");
-          }
-        }
-      }else{
-        if(usePrev){
-          carryOver[year-1]--;
-          div.classList.add("vacation-prev");
-          div.textContent+=" AN";
-        }else{
-          div.classList.add("vacation");
-          yearData[year].vacation.add(key);
-        }
-      }
-    }
-    if(type==="m"){
-      div.classList.add("medical");
-      yearData[year].medical.add(key);
-    }
+    if(type==="v"){div.classList.add("vacation");yearData[y].vacation.add(key);}
+    if(type==="m"){div.classList.add("medical");yearData[y].medical.add(key);}
   }
   updateCounters();
   saveData();
@@ -194,17 +167,16 @@ function handleDayClick(div,year,month,day){
 // ---------------- CONTADORES ----------------
 function updateCounters(){
   const d=yearData[currentYear];
-  const prev=carryOver[currentYear-1]||0;
-  vacationCount.textContent=`Vacaciones usadas: ${d.vacation.size}`;
-  vacationPrevCount.textContent=`Vacaciones año anterior: ${prev}`;
-  medicalCount.textContent=`Días médicos: ${d.medical.size}`;
-  remaining.textContent=`Vacaciones restantes: ${vacationLimit-d.vacation.size+prev}`;
+  document.getElementById("vacationCount").textContent=`Vacaciones usadas: ${d.vacation.size}`;
+  document.getElementById("medicalCount").textContent=`Días médicos: ${d.medical.size}`;
+  document.getElementById("remaining").textContent=
+    `Vacaciones restantes: ${vacationLimit-d.vacation.size}`;
 }
 
 // ---------------- CONTROLES ----------------
-prevYear.onclick=()=>createCalendar(currentYear-1);
-nextYear.onclick=()=>createCalendar(currentYear+1);
-yearInput.onchange=e=>createCalendar(+e.target.value);
+document.getElementById("prevYear").onclick=()=>createCalendar(currentYear-1);
+document.getElementById("nextYear").onclick=()=>createCalendar(currentYear+1);
+document.getElementById("yearInput").onchange=e=>createCalendar(+e.target.value);
 
 // ---------------- INIT ----------------
 loadData();
