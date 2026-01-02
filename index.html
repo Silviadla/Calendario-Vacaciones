@@ -151,7 +151,7 @@ function calculateCarryOver(year) {
   }
   const data = yearData[year];
   const totalUsed = data.vacation.size + data.vacationPrev.size;
-  const prevCarry = calculateCarryOver(year - 1);  // Recursivo para cadena
+  const prevCarry = calculateCarryOver(year - 1);
   const totalAvailable = vacationLimit + prevCarry;
   const leftover = totalAvailable - totalUsed;
   carryOver[year] = Math.max(0, leftover);
@@ -163,7 +163,6 @@ function createCalendar(year){
   currentYear = year;
   yearInput.value = year;
 
-  // Calcular carryOver del año anterior (recursivamente)
   calculateCarryOver(year - 1);
 
   const holidays = getHolidaySets(year);
@@ -254,6 +253,8 @@ function handleDayClick(dayDiv, year, month, day){
     data.vacationPrev.delete(dateKey);
     data.medical.delete(dateKey);
     dayDiv.textContent = day;
+    // Recalcular carryOver después de borrar (puede afectar años siguientes)
+    delete carryOver[year]; // forzar recalculo
     updateCounters();
     saveData();
     return;
@@ -331,12 +332,14 @@ function handleDayClick(dayDiv, year, month, day){
     }
   });
 
+  delete carryOver[year]; // forzar recalculo para años siguientes
   updateCounters();
   saveData();
 }
 
 // --- CONTADORES ---
 function updateCounters(){
+  calculateCarryOver(currentYear - 1); // asegurar siempre actualizado
   const data = yearData[currentYear] || {vacation: new Set(), vacationPrev: new Set(), medical: new Set()};
   const carry = carryOver[currentYear - 1] || 0;
   const usedPrev = data.vacationPrev.size;
