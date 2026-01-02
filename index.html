@@ -32,8 +32,11 @@
   .auth-input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 12px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font-size: 1rem; }
   .auth-btn { width: 100%; padding: 13px; margin: 10px 0; border-radius: 12px; border: none; font-weight: 600; cursor: pointer; transition: transform 0.2s; }
   .btn-email { background: var(--primary); color: white; }
-  .btn-phone { background: #22c55e; color: white; }
   .btn-anon { background: transparent; border: 1px solid var(--border); color: var(--text); }
+  .forgot-link { font-size: 0.8rem; margin-top: 8px; display: block; color: var(--primary); text-decoration: none; cursor: pointer; }
+  
+  .pass-container { position: relative; width: 100%; }
+  .toggle-eye { position: absolute; right: 15px; top: 22px; cursor: pointer; opacity: 0.6; display: flex; align-items: center; }
 
   /* --- ESTILOS CALENDARIO --- */
   h1 { text-align: center; font-size: 2.2rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--primary); }
@@ -84,16 +87,20 @@
     <p style="font-size: 0.9rem; margin-bottom: 20px;">Gestiona tus vacaciones en la nube</p>
     
     <input type="email" id="email" class="auth-input" placeholder="Correo electrónico">
-    <input type="password" id="pass" class="auth-input" placeholder="Contraseña">
+    
+    <div class="pass-container">
+      <input type="password" id="pass" class="auth-input" placeholder="Contraseña" style="padding-right: 45px;">
+      <span class="toggle-eye" onclick="togglePassword()">
+        <svg id="eyeIcon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+      </span>
+    </div>
+
     <button onclick="loginEmail()" class="auth-btn btn-email">Entrar / Registrar Email</button>
+    <a href="#" class="forgot-link" onclick="recuperarPassword()">¿Has olvidado tu contraseña?</a>
 
     <div style="margin: 20px 0; border-top: 1px solid var(--border);"></div>
 
-    <div id="recaptcha-container"></div>
-    <input type="text" id="phone" class="auth-input" placeholder="+34 600 000 000">
-    <button onclick="loginTelefono()" class="auth-btn btn-phone">Entrar con Teléfono</button>
-
-    <button onclick="loginAnonimo()" class="auth-btn btn-anon" style="margin-top: 10px;">Entrar como Invitado</button>
+    <button onclick="loginAnonimo()" class="auth-btn btn-anon">Entrar como Invitado</button>
   </div>
 
   <div id="calendarSection" style="display: none;">
@@ -157,18 +164,15 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 let userId = null;
 
-// Recaptcha invisible para SMS
-window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', { 'size': 'invisible' });
-
 // --- LÓGICA DE AUTENTICACIÓN ---
 
 firebase.auth().onAuthStateChanged((user) => {
   if (user) {
     userId = user.uid;
-    document.getElementById('userTag').textContent = user.email || user.phoneNumber || "Invitado";
+    document.getElementById('userTag').textContent = user.email || "Invitado";
     document.getElementById('authSection').style.display = 'none';
     document.getElementById('calendarSection').style.display = 'block';
-    loadData(); // Cargar datos inmediatamente al entrar
+    loadData();
   } else {
     userId = null;
     document.getElementById('authSection').style.display = 'block';
@@ -176,27 +180,39 @@ firebase.auth().onAuthStateChanged((user) => {
   }
 });
 
+function togglePassword() {
+  const passInput = document.getElementById('pass');
+  const eyeIcon = document.getElementById('eyeIcon');
+  if (passInput.type === 'password') {
+    passInput.type = 'text';
+    eyeIcon.style.color = 'var(--primary)';
+  } else {
+    passInput.type = 'password';
+    eyeIcon.style.color = 'currentColor';
+  }
+}
+
 function loginEmail() {
   const email = document.getElementById('email').value;
   const pass = document.getElementById('pass').value;
   if(!email || !pass) return alert("Rellena email y contraseña");
   firebase.auth().signInWithEmailAndPassword(email, pass)
     .catch(() => firebase.auth().createUserWithEmailAndPassword(email, pass))
-    .catch(e => alert(e.message));
+    .catch(e => alert("Error: " + e.message));
 }
 
-function loginTelefono() {
-  const phone = document.getElementById('phone').value;
-  if(!phone.startsWith('+')) return alert("Usa formato internacional (+34...)");
-  firebase.auth().signInWithPhoneNumber(phone, window.recaptchaVerifier)
-    .then(confirmRes => {
-      const code = prompt("Código recibido por SMS:");
-      return confirmRes.confirm(code);
-    }).catch(e => alert(e.message));
+function recuperarPassword() {
+  const email = document.getElementById('email').value;
+  if (!email) return alert("Escribe tu correo arriba para enviarte el enlace de recuperación.");
+  
+  firebase.auth().sendPasswordResetEmail(email)
+    .then(() => alert("✅ ¡Correo enviado! Revisa tu bandeja de entrada o spam."))
+    .catch(e => alert("❌ Error: " + e.message));
 }
 
 function loginAnonimo() {
-  firebase.auth().signInAnonymously();
+  firebase.auth().signInAnonymously()
+    .catch(e => alert("❌ Error: Asegúrate de habilitar 'Anónimo' en la consola de Firebase. " + e.message));
 }
 
 function logout() {
@@ -221,7 +237,6 @@ const syncText = document.getElementById("syncText");
 const dayNames = ["L","M","X","J","V","S","D"];
 const months = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 
-// --- CARGA Y GUARDADO CON NUBE ---
 function loadData() {
   if (!userId) return;
   syncText.textContent = "Cargando...";
@@ -237,7 +252,6 @@ function loadData() {
     syncText.textContent = "Sincronizado";
     syncText.style.color = "var(--vacation)";
   }).catch((e) => {
-    console.error(e);
     syncText.textContent = "Error de conexión";
     syncText.style.color = "red";
     createCalendar(currentYear);
@@ -256,7 +270,7 @@ function saveData() {
   }).then(() => {
     syncText.textContent = "Sincronizado";
     syncText.style.color = "var(--vacation)";
-  }).catch((e) => {
+  }).catch(() => {
     syncText.textContent = "Error al guardar";
     syncText.style.color = "red";
   });
@@ -285,13 +299,8 @@ function convertToArrays(data) {
   return converted;
 }
 
-// LÓGICA DE FESTIVOS (LEÓN)
 function getFixedHolidays(year){
-  const fixed = [
-    {month:1,day:1},{month:1,day:6},{month:5,day:1},
-    {month:8,day:15},{month:10,day:12},{month:11,day:1},
-    {month:12,day:6},{month:12,day:8},{month:12,day:25}
-  ];
+  const fixed = [{month:1,day:1},{month:1,day:6},{month:5,day:1},{month:8,day:15},{month:10,day:12},{month:11,day:1},{month:12,day:6},{month:12,day:8},{month:12,day:25}];
   return fixed.map(f=>{
     let date = new Date(year, f.month-1, f.day);
     if (f.month === 10 && f.day === 12 && date.getDay() === 0) date.setDate(13);
@@ -326,10 +335,7 @@ function getLocalAndTransferredHolidays(year){
 }
 
 function getHolidaySets(year){
-  return { 
-    national: new Set([...getFixedHolidays(year), ...getEasterRelatedHolidays(year)]),
-    local: getLocalAndTransferredHolidays(year)
-  };
+  return { national: new Set([...getFixedHolidays(year), ...getEasterRelatedHolidays(year)]), local: getLocalAndTransferredHolidays(year) };
 }
 
 function calculateCarryOver(year) {
@@ -352,9 +358,7 @@ function createCalendar(year){
   yearInput.value = year;
   ensureCarryOverUpTo(year - 1);
   const holidays = getHolidaySets(year);
-  
   if (!yearData[year]) yearData[year] = { vacation: new Set(), vacationPrev: new Set(), medical: new Set() };
-  
   calendar.innerHTML = "";
   for(let m = 0; m < 12; m++){
     const totalDays = new Date(year, m+1, 0).getDate();
@@ -363,39 +367,32 @@ function createCalendar(year){
     monthDiv.innerHTML = `<h2>${months[m]}</h2>`;
     const daysDiv = document.createElement("div");
     daysDiv.className = "days";
-
     dayNames.forEach(d => {
       const label = document.createElement("div");
       label.className = "day"; label.style.fontWeight = "bold"; label.textContent = d;
       daysDiv.appendChild(label);
     });
-
     const startDay = (new Date(year, m, 1).getDay() + 6) % 7;
     for(let i = 0; i < startDay; i++) daysDiv.appendChild(document.createElement("div"));
-
     for(let d = 1; d <= totalDays; d++){
       const dateKey = `${year}-${m+1}-${d}`;
       const dayDiv = document.createElement("div");
       dayDiv.className = "day";
       dayDiv.dataset.date = dateKey;
       dayDiv.innerHTML = `<span>${d}</span>`;
-      
       const dayOfWeek = new Date(year, m, d).getDay();
-      const isToday = (dateKey === `${new Date().getFullYear()}-${new Date().getMonth()+1}-${new Date().getDate()}`);
-      if (isToday) dayDiv.classList.add("today");
-
+      if (dateKey === `${new Date().getFullYear()}-${new Date().getMonth()+1}-${new Date().getDate()}`) dayDiv.classList.add("today");
       if (holidays.national.has(dateKey)) {
         dayDiv.classList.add("holiday-national");
         dayDiv.innerHTML += `<div class="tooltip">Festivo Nacional</div>`;
       } else if (holidays.local.has(dateKey)) {
         dayDiv.classList.add("holiday-local");
-        dayDiv.innerHTML += `<div class="tooltip">Festivo León / Trasladado</div>`;
+        dayDiv.innerHTML += `<div class="tooltip">Festivo León</div>`;
       } else if (dayOfWeek === 0 || dayOfWeek === 6) {
         dayDiv.classList.add("weekend");
       } else {
         dayDiv.onclick = () => handleDayClick(dayDiv, year, m, d);
       }
-
       if (yearData[year].vacation.has(dateKey)) dayDiv.classList.add("vacation");
       if (yearData[year].medical.has(dateKey)) dayDiv.classList.add("medical");
       if (yearData[year].vacationPrev.has(dateKey)) {
@@ -413,9 +410,7 @@ function createCalendar(year){
 function handleDayClick(dayDiv, year, month, day){
   const dateKey = `${year}-${month+1}-${day}`;
   const data = yearData[year];
-  
   data.vacation.delete(dateKey); data.vacationPrev.delete(dateKey); data.medical.delete(dateKey);
-
   const type = prompt("¿Qué quieres marcar? (v = vacaciones, m = médico, c = borrar)").toLowerCase();
   if (type === "m") {
     data.medical.add(dateKey);
@@ -423,10 +418,8 @@ function handleDayClick(dayDiv, year, month, day){
     const carry = calculateCarryOver(year - 1);
     const remainingCarry = carry - data.vacationPrev.size;
     let usePrev = (remainingCarry > 0) && confirm(`Usar día de año anterior? (Quedan ${remainingCarry})`);
-
     const dow = new Date(year, month, day).getDay();
     let markWeek = (dow >= 1 && dow <= 5) && confirm("¿Marcar hasta el viernes?");
-    
     let daysToMark = [dateKey];
     if(markWeek) {
       for(let i=dow+1; i<=5; i++) {
@@ -435,13 +428,11 @@ function handleDayClick(dayDiv, year, month, day){
         daysToMark.push(tempKey);
       }
     }
-
     daysToMark.forEach(k => {
       if(usePrev && (calculateCarryOver(year-1) - data.vacationPrev.size) > 0) data.vacationPrev.add(k);
       else data.vacation.add(k);
     });
   }
-  
   delete carryOver[year];
   saveData();
   createCalendar(year);
