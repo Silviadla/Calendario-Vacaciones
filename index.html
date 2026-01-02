@@ -56,6 +56,17 @@ const months=["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto",
 let currentYear = Math.max(new Date().getFullYear(), START_YEAR);
 let yearData = {};
 
+  // ---------------- ELEMENTOS DOM ----------------
+const calendar = document.getElementById("calendar");
+const yearInput = document.getElementById("yearInput");
+const vacationCount = document.getElementById("vacationCount");
+const vacationPrevCount = document.getElementById("vacationPrevCount");
+const medicalCount = document.getElementById("medicalCount");
+const remaining = document.getElementById("remaining");
+const prevYear = document.getElementById("prevYear");
+const nextYear = document.getElementById("nextYear");
+
+
 // ---------------- STORAGE ----------------
 function saveData(){
   const data={};
