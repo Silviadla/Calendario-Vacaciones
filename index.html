@@ -48,7 +48,7 @@
     <p id="vacationCount">Días de vacaciones usados (año actual): 0</p>
     <p id="vacationPrevCount">Días de vacaciones año anterior usados: 0 / 0</p>
     <p id="medicalCount">Días médicos: 0</p>
-    <p id="remaining">Vacaciones restantes: 23</p>
+    <p id="remaining">Vacaciones restantes (incl. sobrantes año anterior): 23</p>
   </div>
   
   <div class="labels">
@@ -75,8 +75,8 @@
     const months = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
     
     let currentYear = new Date().getFullYear();
-    let yearData = {};        // Se cargará desde localStorage
-    let carryOver = {};       // También se guardará
+    let yearData = {};        // {year: {vacation: Set(), medical: Set()}}
+    let carryOver = {};       // carryOver[year] = días sobrantes del año 'year' para usar en year+1
 
     // ====================== LOCALSTORAGE ======================
     function loadData() {
@@ -86,44 +86,56 @@
         yearData = parsed.yearData || {};
         carryOver = parsed.carryOver || {};
         
-        // Convertir Sets de vuelta a Sets
+        // Convertir arrays a Sets
         Object.keys(yearData).forEach(year => {
           const y = yearData[year];
-          if (y.vacation) y.vacation = new Set(y.vacation);
-          if (y.medical) y.medical = new Set(y.medical);
+          y.vacation = new Set(y.vacation || []);
+          y.medical = new Set(y.medical || []);
         });
       }
     }
 
     function saveData() {
       const toSave = {
-        yearData: {},
-        carryOver: carryOver
+        carryOver: carryOver,
+        yearData: {}
       };
-
-      // Convertir Sets a arrays para guardar en localStorage
       Object.keys(yearData).forEach(year => {
         const y = yearData[year];
         toSave.yearData[year] = {
-          vacation: Array.from(y.vacation || []),
-          medical: Array.from(y.medical || []),
-          vacationPrevUsed: y.vacationPrevUsed || 0
+          vacation: Array.from(y.vacation),
+          medical: Array.from(y.medical)
         };
       });
-
       localStorage.setItem('vacationCalendarData', JSON.stringify(toSave));
+    }
+
+    // ====================== CARRY-OVER ======================
+    function calculateCarryOverForYear(year) {
+      // year = año del que calculamos sobrantes (para usar en year+1)
+      if (carryOver[year] !== undefined) return carryOver[year];
+
+      const data = yearData[year] || {vacation: new Set(), medical: new Set()};
+      const used = data.vacation.size;
+      const previousCarry = carryOver[year - 1] || 0;
+      const leftover = previousCarry + vacationLimit - used;
+      carryOver[year] = Math.max(0, leftover);
+      saveData();
+      return carryOver[year];
     }
 
     // ====================== FESTIVOS ======================
     function getFixedHolidays(year) {
       const fixed = [
-        {month:1,day:1}, {month:1,day:6}, {month:5,day:1},
-        {month:8,day:15}, {month:10,day:12}, {month:11,day:1},
-        {month:12,day:6}, {month:12,day:8}, {month:12,day:25}
+        {m:1,d:1}, {m:1,d:6}, {m:5,d:1},
+        {m:8,d:15}, {m:10,d:12}, {m:11,d:1},
+        {m:12,d:6}, {m:12,d:8}, {m:12,d:25}
       ];
       return fixed.map(f => {
-        let date = new Date(year, f.month-1, f.day);
-        if (f.month === 10 && f.day === 12 && date.getDay() === 0) date.setDate(13);
+        let date = new Date(year, f.m-1, f.d);
+        if (f.m === 10 && f.d === 12 && date.getDay() === 0) date.setDate(13); // 12 oct domingo → lunes
+        if (f.m === 11 && f.d === 1 && date.getDay() === 0) date.setDate(2);  // Todos los Santos
+        if (f.m === 12 && f.d === 6 && date.getDay() === 0) date.setDate(7);  // Constitución
         return formatDate(date);
       });
     }
@@ -133,32 +145,27 @@
       const G = year % 19;
       const C = f(year / 100);
       const H = (C - f(C/4) - f((8*C + 13)/25) + 19*G + 15) % 30;
-      const I = H - f(H/28) * (1 - f(H/28) * f(29/(H+1)) * f((21-G)/11));
+      const I = H - f(H/28)*(1 - f(H/28)*f(29/(H+1))*f((21-G)/11));
       const J = (year + f(year/4) + I + 2 - C + f(C/4)) % 7;
       const L = I - J;
       const month = 3 + f((L + 40)/44);
-      const day = L + 28 - 31 * f(month/4);
+      const day = L + 28 - 31*f(month/4);
       return new Date(year, month-1, day);
     }
 
     function getEasterRelatedHolidays(year) {
       const easter = getEasterSunday(year);
-      const thursday = new Date(easter);
-      thursday.setDate(easter.getDate() - 3);
-      const friday = new Date(easter);
-      friday.setDate(easter.getDate() - 2);
+      const thursday = new Date(easter); thursday.setDate(easter.getDate() - 3);
+      const friday = new Date(easter); friday.setDate(easter.getDate() - 2);
       return [formatDate(thursday), formatDate(friday)];
     }
 
     function getLocalHolidays(year) {
       const holidays = [];
-      holidays.push(formatDate(new Date(year, 5, 24))); // 24 junio
-      holidays.push(formatDate(new Date(year, 3, 23))); // 23 abril - Castilla y León
-      
+      holidays.push(formatDate(new Date(year, 3, 23))); // 23 abril Día Castilla y León
       let sanFroilan = new Date(year, 9, 5);
       if (sanFroilan.getDay() === 0) sanFroilan.setDate(6);
       holidays.push(formatDate(sanFroilan));
-      
       return holidays;
     }
 
@@ -186,27 +193,11 @@
       const {national: nationalHolidays, local: localHolidays} = getHolidaySets(year);
 
       if (!yearData[year]) {
-        yearData[year] = {
-          vacation: new Set(),
-          medical: new Set(),
-          vacationPrevUsed: 0
-        };
+        yearData[year] = {vacation: new Set(), medical: new Set()};
       }
 
-      // Calcular carryOver del año anterior si no existe
-      const prevYear = year - 1;
-      if (carryOver[prevYear] === undefined) {
-        const prevData = yearData[prevYear];
-        if (prevData) {
-          const used = prevData.vacation.size;
-          const previousCarry = carryOver[prevYear - 1] || 0;
-          const leftover = previousCarry + vacationLimit - used;
-          carryOver[prevYear] = Math.max(0, leftover);
-        } else {
-          carryOver[prevYear] = 0;
-        }
-        saveData(); // Guardar el nuevo carryOver
-      }
+      // Siempre calcular carry-over del año anterior
+      calculateCarryOverForYear(year - 1);
 
       calendar.innerHTML = "";
 
@@ -216,7 +207,6 @@
 
         const monthDiv = document.createElement("div");
         monthDiv.className = "month";
-
         const title = document.createElement("h2");
         title.textContent = months[m];
         monthDiv.appendChild(title);
@@ -233,9 +223,7 @@
         });
 
         const startDay = (firstDay + 6) % 7;
-        for (let i = 0; i < startDay; i++) {
-          daysDiv.appendChild(document.createElement("div"));
-        }
+        for (let i = 0; i < startDay; i++) daysDiv.appendChild(document.createElement("div"));
 
         for (let d = 1; d <= totalDays; d++) {
           const dayDiv = document.createElement("div");
@@ -260,39 +248,30 @@
             dayDiv.addEventListener("click", () => handleDayClick(dayDiv, dateObj, dateKey));
           }
 
-          // Marcar vacaciones guardadas
-          const data = yearData[year];
-          if (data.vacation.has(dateKey)) {
-            dayDiv.classList.add("vacation");
-          }
-          if (data.medical.has(dateKey)) {
-            dayDiv.classList.add("medical");
-          }
+          // Marcar datos guardados
+          if (yearData[year].vacation.has(dateKey)) dayDiv.classList.add("vacation");
+          if (yearData[year].medical.has(dateKey)) dayDiv.classList.add("medical");
 
           daysDiv.appendChild(dayDiv);
         }
-
         monthDiv.appendChild(daysDiv);
         calendar.appendChild(monthDiv);
       }
 
-      applyPrevYearMarkings(); // Aplicar marcas visuales de días AN
+      applyPrevYearVisualMarkings();
       updateCounters();
     }
 
-    function applyPrevYearMarkings() {
-      const data = yearData[currentYear];
-      const usedPrev = data.vacationPrevUsed || 0;
-      if (usedPrev === 0) return;
-
-      // Recorrer todos los días marcados como vacation y los primeros 'usedPrev' los marcamos como AN
+    function applyPrevYearVisualMarkings() {
+      const available = carryOver[currentYear - 1] || 0;
       const vacationDays = document.querySelectorAll('.day.vacation');
       let count = 0;
       vacationDays.forEach(div => {
-        if (count < usedPrev) {
+        if (count < available) {
           div.classList.remove('vacation');
           div.classList.add('vacation-prev');
-          div.textContent = div.textContent.trim() + " AN";
+          const num = parseInt(div.textContent);
+          div.textContent = isNaN(num) ? "AN" : num + " AN";
           count++;
         }
       });
@@ -303,7 +282,6 @@
       const year = dateObj.getFullYear();
       const data = yearData[year];
       const carryAvailable = carryOver[year - 1] || 0;
-      const usedPrev = data.vacationPrevUsed || 0;
 
       const isVacation = dayDiv.classList.contains("vacation");
       const isVacationPrev = dayDiv.classList.contains("vacation-prev");
@@ -314,10 +292,12 @@
         dayDiv.classList.remove("vacation", "vacation-prev", "medical");
         dayDiv.textContent = dateObj.getDate();
 
-        if (isVacation) {
+        if (isVacation || isVacationPrev) {
           data.vacation.delete(dateKey);
-        } else if (isVacationPrev) {
-          data.vacationPrevUsed = Math.max(0, usedPrev - 1);
+          if (isVacationPrev) {
+            // Si era AN, liberamos uno del carry-over usado implícito
+            // (como no guardamos usados explícitos, se recalculará visualmente)
+          }
         } else if (isMedical) {
           data.medical.delete(dateKey);
         }
@@ -325,46 +305,35 @@
         const type = prompt("¿Qué quieres marcar?\n\nv = vacaciones\nm = médico", "v").toLowerCase().trim();
 
         if (type === "v") {
-          let usePrev = false;
-          if (carryAvailable > usedPrev) {
-            usePrev = confirm(`Tienes ${carryAvailable - usedPrev} días de vacaciones del año anterior disponibles.\n¿Quieres usar uno para este día?`);
-          }
-
           const dayOfWeek = dateObj.getDay();
           let markWeek = false;
           if (dayOfWeek >= 1 && dayOfWeek <= 5) {
             markWeek = confirm("¿Quieres marcar vacaciones desde hoy hasta el viernes de esta semana?");
           }
 
+          const daysToMark = [];
           if (markWeek) {
             for (let dow = dayOfWeek; dow <= 5; dow++) {
               const tempDate = new Date(dateObj);
               tempDate.setDate(dateObj.getDate() + (dow - dayOfWeek));
               const tempKey = formatDate(tempDate);
               const tempDiv = document.querySelector(`.day[data-date="${tempKey}"]`);
-              if (!tempDiv || tempDiv.classList.contains('holiday-national') || 
-                  tempDiv.classList.contains('holiday-local') || 
-                  tempDiv.classList.contains('weekend')) continue;
-
-              if (usePrev && (carryAvailable - usedPrev > 0)) {
-                tempDiv.classList.add("vacation-prev");
-                tempDiv.textContent = tempDate.getDate() + " AN";
-                data.vacationPrevUsed++;
-              } else {
-                tempDiv.classList.add("vacation");
-                data.vacation.add(tempKey);
+              if (tempDiv && !tempDiv.classList.contains('holiday-national') && 
+                  !tempDiv.classList.contains('holiday-local') && 
+                  !tempDiv.classList.contains('weekend')) {
+                daysToMark.push({div: tempDiv, key: tempKey, date: tempDate});
               }
             }
           } else {
-            if (usePrev && (carryAvailable - usedPrev > 0)) {
-              dayDiv.classList.add("vacation-prev");
-              dayDiv.textContent = dateObj.getDate() + " AN";
-              data.vacationPrevUsed++;
-            } else {
-              dayDiv.classList.add("vacation");
-              data.vacation.add(dateKey);
-            }
+            daysToMark.push({div: dayDiv, key: dateKey, date: dateObj});
           }
+
+          // Marcar todos los días
+          daysToMark.forEach(item => {
+            item.div.classList.add("vacation");
+            data.vacation.add(item.key);
+          });
+
         } else if (type === "m") {
           dayDiv.classList.add("medical");
           data.medical.add(dateKey);
@@ -372,20 +341,19 @@
       }
 
       saveData();
+      applyPrevYearVisualMarkings();
       updateCounters();
-      applyPrevYearMarkings(); // Volver a aplicar marcas visuales AN
     }
 
     // ====================== CONTADORES ======================
     function updateCounters() {
-      const data = yearData[currentYear] || {vacation: new Set(), medical: new Set(), vacationPrevUsed: 0};
+      const data = yearData[currentYear] || {vacation: new Set(), medical: new Set()};
       const carryAvailable = carryOver[currentYear - 1] || 0;
-      const usedPrev = data.vacationPrevUsed || 0;
 
       vacationCount.textContent = `Días de vacaciones usados (año actual): ${data.vacation.size}`;
-      vacationPrevCount.textContent = `Días de vacaciones año anterior usados: ${usedPrev} / ${carryAvailable}`;
+      vacationPrevCount.textContent = `Días de vacaciones año anterior disponibles: ${carryAvailable}`;
       medicalCount.textContent = `Días médicos: ${data.medical.size}`;
-      remaining.textContent = `Vacaciones restantes: ${vacationLimit - data.vacation.size + (carryAvailable - usedPrev)}`;
+      remaining.textContent = `Vacaciones restantes (incl. sobrantes año anterior): ${vacationLimit - data.vacation.size + carryAvailable}`;
     }
 
     // ====================== NAVEGACIÓN ======================
