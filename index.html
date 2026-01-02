@@ -142,18 +142,20 @@ function saveData() {
   localStorage.setItem('calendarData', JSON.stringify(toSave));
 }
 
-// --- CARRY OVER ---
-function calculateCarryOver(prevYear) {
-  if (carryOver[prevYear] !== undefined) return;
-  if (!yearData[prevYear]) {
-    carryOver[prevYear] = 0;
-    return;
+// --- CARRY OVER RECURSIVO ---
+function calculateCarryOver(year) {
+  if (carryOver[year] !== undefined) return carryOver[year];
+  if (!yearData[year]) {
+    carryOver[year] = 0;
+    return 0;
   }
-  const prev = yearData[prevYear];
-  const totalUsed = prev.vacation.size + prev.vacationPrev.size;
-  const previousCarry = carryOver[prevYear - 1] || 0;
-  const leftover = vacationLimit + previousCarry - totalUsed;
-  carryOver[prevYear] = Math.max(0, leftover);
+  const data = yearData[year];
+  const totalUsed = data.vacation.size + data.vacationPrev.size;
+  const prevCarry = calculateCarryOver(year - 1);  // Recursivo para cadena
+  const totalAvailable = vacationLimit + prevCarry;
+  const leftover = totalAvailable - totalUsed;
+  carryOver[year] = Math.max(0, leftover);
+  return carryOver[year];
 }
 
 // --- CALENDAR ---
@@ -161,9 +163,8 @@ function createCalendar(year){
   currentYear = year;
   yearInput.value = year;
 
-  // Asegurar carryOver del año anterior
-  const prevYear = year - 1;
-  calculateCarryOver(prevYear);
+  // Calcular carryOver del año anterior (recursivamente)
+  calculateCarryOver(year - 1);
 
   const holidays = getHolidaySets(year);
   const nationalHolidays = holidays.national;
@@ -230,7 +231,7 @@ function createCalendar(year){
 }
 
 function getAvailableVacationDays() {
-  const data = yearData[currentYear];
+  const data = yearData[currentYear] || {vacation: new Set(), vacationPrev: new Set()};
   const carry = carryOver[currentYear - 1] || 0;
   const usedPrev = data.vacationPrev.size;
   const usedNormal = data.vacation.size;
@@ -269,10 +270,9 @@ function handleDayClick(dayDiv, year, month, day){
     return;
   }
 
-  // VACACIONES
   const available = getAvailableVacationDays();
   if (available <= 0) {
-    alert("No te quedan días de vacaciones disponibles (ni del año anterior ni del actual).");
+    alert("No te quedan días de vacaciones disponibles.");
     return;
   }
 
@@ -284,7 +284,7 @@ function handleDayClick(dayDiv, year, month, day){
   if (remainingCarry > 0) {
     usePrev = confirm(`Tienes ${remainingCarry} días del año anterior disponibles. ¿Quieres usar uno de ellos?`);
   } else {
-    alert(`No quedan días del año anterior. Se usará uno del año actual.`);
+    alert(`No quedan días del año anterior. Se usará del año actual.`);
   }
 
   const dayOfWeek = new Date(year, month, day).getDay();
@@ -314,11 +314,10 @@ function handleDayClick(dayDiv, year, month, day){
   }
 
   if (daysToMark.length > available) {
-    alert(`No tienes suficientes días disponibles. Necesitas ${daysToMark.length} pero solo te quedan ${available}.`);
+    alert(`No tienes suficientes días. Necesitas ${daysToMark.length} pero solo quedan ${available}.`);
     return;
   }
 
-  // Marcar priorizando del año anterior si el usuario dijo sí
   let prevToUse = usePrev ? Math.min(daysToMark.length, remainingCarry) : 0;
   daysToMark.forEach(item => {
     if (prevToUse > 0) {
@@ -352,10 +351,7 @@ function updateCounters(){
 loadData();
 document.getElementById("prevYear").addEventListener("click", () => createCalendar(currentYear - 1));
 document.getElementById("nextYear").addEventListener("click", () => createCalendar(currentYear + 1));
-yearInput.addEventListener("change", () => {
-  const newYear = parseInt(yearInput.value);
-  createCalendar(newYear);
-});
+yearInput.addEventListener("change", () => createCalendar(parseInt(yearInput.value)));
 
 createCalendar(currentYear);
 </script>
