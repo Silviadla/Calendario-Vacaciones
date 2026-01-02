@@ -147,13 +147,17 @@
   .dot {
     width: 1rem; height: 1rem; border-radius: 50%; display: inline-block;
   }
-  /* MEJOR AJUSTE EN PANTALLA GRANDE: MÁXIMO 4 COLUMNAS */
   .calendar { 
     display: grid; 
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
+    grid-template-columns: repeat(auto-fill, minmax(310px, 1fr)); 
     gap: 1.8rem; 
-    max-width: 1400px; /* limita el ancho total */
-    margin: 0 auto; /* centra el grid */
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+  @media (min-width: 1400px) {
+    .calendar { 
+      grid-template-columns: repeat(4, 1fr);
+    }
   }
   .month { 
     background: var(--card-bg);
@@ -176,7 +180,7 @@
     font-size: 0.92rem; 
   }
   .day { 
-    aspect-ratio: 1/1;
+    height: 48px; /* Altura fija */
     display: flex;
     align-items: center;
     justify-content: center;
@@ -185,14 +189,16 @@
     transition: all 0.3s;
     font-weight: 500;
     border: 1px solid transparent;
+    position: relative;
+    overflow: hidden;
   }
   .day:hover { 
-    transform: scale(1.1); 
+    transform: scale(1.08); 
     box-shadow: 0 6px 16px rgba(0,0,0,0.12); 
     z-index: 5;
   }
   .vacation { background: var(--vacation); color: white; }
-  .vacation-prev { background: var(--vacation-prev); color: white; font-weight: bold; }
+  .vacation-prev { background: var(--vacation-prev); color: white; }
   .medical { background: var(--medical); color: white; }
   .holiday-national { background: var(--holiday-national); color: #7f1d1d; font-weight: 500; }
   .holiday-local { background: var(--holiday-local); color: #4c1d95; font-weight: 500; }
@@ -201,6 +207,19 @@
     border: 4px solid var(--primary) !important; 
     font-weight: bold;
     box-shadow: 0 0 20px rgba(76, 110, 245, 0.4);
+  }
+  /* Badge para "AN" - superpuesto sin afectar tamaño */
+  .badge-an {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background: rgba(0,0,0,0.7);
+    color: white;
+    font-size: 0.65rem;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 8px;
+    pointer-events: none;
   }
   .tooltip {
     position: absolute;
@@ -230,15 +249,11 @@
   }
   .day.holiday-national:hover .tooltip,
   .day.holiday-local:hover .tooltip { opacity: 1; }
-  @media (min-width: 1400px) {
-    .calendar { 
-      grid-template-columns: repeat(4, 1fr); /* máximo 4 columnas en pantallas grandes */
-    }
-  }
   @media (max-width: 768px) {
     .calendar { grid-template-columns: 1fr; }
     .counter-box { min-width: auto; padding: 0.7rem; }
     .big-remaining { font-size: 2rem; }
+    .day { height: 42px; }
   }
 </style>
 </head>
@@ -293,6 +308,7 @@ const months = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto
 let yearData = {};      
 let carryOver = {};     
 
+// --- HOLIDAYS --- (igual que antes)
 function getFixedHolidays(year){
   const fixed = [
     {month:1,day:1},{month:1,day:6},{month:5,day:1},
@@ -438,13 +454,17 @@ function createCalendar(year){
     for(let d = 1; d <= totalDays; d++){
       const dayDiv = document.createElement("div");
       dayDiv.className = "day";
-      dayDiv.textContent = d;
       const dateKey = `${year}-${m+1}-${d}`;
       dayDiv.dataset.date = dateKey;
 
       const dayOfWeek = new Date(year, m, d).getDay();
 
       if (dateKey === getTodayKey()) dayDiv.classList.add("today");
+
+      // Número del día
+      const numberSpan = document.createElement("span");
+      numberSpan.textContent = d;
+      dayDiv.appendChild(numberSpan);
 
       if (nationalHolidays.has(dateKey)) {
         dayDiv.classList.add("holiday-national");
@@ -470,13 +490,22 @@ function createCalendar(year){
         dayDiv.addEventListener("click", () => handleDayClick(dayDiv, year, m, d));
       }
 
-      if (yearData[year].vacationPrev.has(dateKey)) {
-        dayDiv.classList.add("vacation-prev");
-        dayDiv.textContent = d + " AN";
-      } else if (yearData[year].vacation.has(dateKey)) {
+      // Vacaciones año actual
+      if (yearData[year].vacation.has(dateKey)) {
         dayDiv.classList.add("vacation");
       }
-      if (yearData[year].medical.has(dateKey)) dayDiv.classList.add("medical");
+      // Médico
+      if (yearData[year].medical.has(dateKey)) {
+        dayDiv.classList.add("medical");
+      }
+      // Vacaciones año anterior - badge superpuesto
+      if (yearData[year].vacationPrev.has(dateKey)) {
+        dayDiv.classList.add("vacation-prev");
+        const badge = document.createElement("div");
+        badge.className = "badge-an";
+        badge.textContent = "AN";
+        dayDiv.appendChild(badge);
+      }
 
       daysDiv.appendChild(dayDiv);
     }
@@ -503,13 +532,15 @@ function handleDayClick(dayDiv, year, month, day){
   const dateKey = `${year}-${month+1}-${day}`;
   const data = yearData[year];
 
+  // Limpiar clases y badge
+  dayDiv.classList.remove("vacation", "vacation-prev", "medical");
+  const badge = dayDiv.querySelector(".badge-an");
+  if (badge) badge.remove();
+  data.vacation.delete(dateKey);
+  data.vacationPrev.delete(dateKey);
+  data.medical.delete(dateKey);
+
   if (dayDiv.classList.contains("vacation") || dayDiv.classList.contains("vacation-prev") || dayDiv.classList.contains("medical")) {
-    dayDiv.classList.remove("vacation", "vacation-prev", "medical");
-    data.vacation.delete(dateKey);
-    data.vacationPrev.delete(dateKey);
-    data.medical.delete(dateKey);
-    dayDiv.textContent = day;
-    delete carryOver[year];
     updateCounters();
     saveData();
     return;
@@ -579,7 +610,10 @@ function handleDayClick(dayDiv, year, month, day){
     if (prevToUse > 0) {
       data.vacationPrev.add(item.key);
       item.div.classList.add("vacation-prev");
-      item.div.textContent = item.num + " AN";
+      const badge = document.createElement("div");
+      badge.className = "badge-an";
+      badge.textContent = "AN";
+      item.div.appendChild(badge);
       prevToUse--;
     } else {
       data.vacation.add(item.key);
