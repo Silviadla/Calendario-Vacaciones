@@ -3,9 +3,13 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Calendario Vacaciones </title>
+<title>Calendario Vacaciones León</title>
 <link rel="icon" href="playa.png" type="image/png" />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 <style>
   :root {
     --bg: #f0f4f8;
@@ -13,12 +17,12 @@
     --text: #2d3748;
     --border: #e2e8f0;
     --primary: #4c6ef5;
-    --vacation: #22c55e;       /* Verde vivo y alegre */
-    --vacation-prev: #0ea5e9; /* Cian/turquesa intenso */
-    --medical: #3b82f6;        /* Azul eléctrico */
-    --holiday-national: #ef4444; /* Rojo vivo */
-    --holiday-local: #a855f7;  /* Morado intenso */
-    --weekend: #dbeafe;        /* Azul suave (el que te gustaba) */
+    --vacation: #22c55e;
+    --vacation-prev: #0ea5e9;
+    --medical: #3b82f6;
+    --holiday-national: #ef4444;
+    --holiday-local: #a855f7;
+    --weekend: #dbeafe;
     --shadow: 0 6px 16px rgba(0,0,0,0.08);
   }
   @media (prefers-color-scheme: dark) {
@@ -37,78 +41,77 @@
     }
   }
   * { box-sizing: border-box; margin:0; padding:0; }
-  body { 
-    font-family: 'Inter', sans-serif; 
+  body {
+    font-family: 'Inter', sans-serif;
     background: var(--bg);
     color: var(--text);
     padding: 1.5rem 1rem;
     line-height: 1.6;
     transition: background 0.3s;
   }
-  h1 { 
-    text-align: center; 
-    font-size: 2.2rem; 
+  h1 {
+    text-align: center;
+    font-size: 2.2rem;
     font-weight: 600;
     margin-bottom: 1.8rem;
     color: var(--primary);
   }
-  .year-selector { 
-    text-align: center; 
-    margin-bottom: 1.5rem; 
+  .year-selector {
+    text-align: center;
+    margin-bottom: 1.5rem;
   }
-  .year-selector button { 
-    padding: 0.6rem 1.2rem; 
-    margin: 0 0.4rem; 
-    border: 1px solid var(--border); 
-    background: var(--card-bg); 
-    color: var(--text); 
-    border-radius: 12px; 
-    cursor: pointer; 
+  .year-selector button {
+    padding: 0.6rem 1.2rem;
+    margin: 0 0.4rem;
+    border: 1px solid var(--border);
+    background: var(--card-bg);
+    color: var(--text);
+    border-radius: 12px;
+    cursor: pointer;
     font-weight: 500;
     transition: all 0.3s;
   }
-  .year-selector button:hover { 
-    background: var(--primary); 
-    color: white; 
+  .year-selector button:hover {
+    background: var(--primary);
+    color: white;
     border-color: var(--primary);
   }
-  .year-selector input { 
-    padding: 0.6rem; 
-    width: 100px; 
-    text-align: center; 
-    border: 1px solid var(--border); 
+  .year-selector input {
+    padding: 0.6rem;
+    width: 100px;
+    text-align: center;
+    border: 1px solid var(--border);
     background: var(--card-bg);
-    border-radius: 12px; 
+    border-radius: 12px;
     font-size: 1.1rem;
     font-weight: 500;
   }
-  /* CONTADORES EN 2x2 EN MÓVIL */
-  .counters { 
+  .counters {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 0.8rem; 
+    gap: 0.8rem;
     margin: 1.5rem 0;
   }
   .counter-box {
     background: var(--card-bg);
-    padding: 0.9rem 0.8rem; 
+    padding: 0.9rem 0.8rem;
     border-radius: 14px;
     box-shadow: var(--shadow);
     text-align: center;
     border: 1px solid var(--border);
   }
-  .counter-box div { 
-    font-size: 0.8rem; 
-    opacity: 0.85; 
+  .counter-box div {
+    font-size: 0.8rem;
+    opacity: 0.85;
     margin-bottom: 0.4rem;
     font-weight: 500;
   }
-  .counter-box strong { 
-    font-size: 1.6rem; 
-    font-weight: 700; 
+  .counter-box strong {
+    font-size: 1.6rem;
+    font-weight: 700;
   }
   .big-remaining {
-    font-size: 2rem !important; 
+    font-size: 2rem !important;
     color: var(--primary);
   }
   #resetYear {
@@ -123,54 +126,53 @@
     font-weight: 600;
     box-shadow: var(--shadow);
   }
-  #resetYear:hover { 
-    background: #c53030; 
+  #resetYear:hover {
+    background: #c53030;
   }
-  /* LEYENDA COMPACTA */
-  .labels { 
-    display: flex; 
-    justify-content: center; 
-    gap: 1rem; 
-    margin: 1.5rem 0; 
-    flex-wrap: wrap; 
+  .labels {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin: 1.5rem 0;
+    flex-wrap: wrap;
     font-size: 0.9rem;
     font-weight: 500;
   }
-  .labels span { 
-    display: flex; 
-    align-items: center; 
-    gap: 0.5rem; 
+  .labels span {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
   }
   .dot {
     width: 0.9rem; height: 0.9rem; border-radius: 50%; display: inline-block;
   }
-  .calendar { 
+  .calendar {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
     gap: 1.5rem;
     width: 100%;
   }
-  .month { 
+  .month {
     background: var(--card-bg);
-    border-radius: 20px; 
-    padding: 1.5rem; 
+    border-radius: 20px;
+    padding: 1.5rem;
     box-shadow: var(--shadow);
     border: 1px solid var(--border);
   }
-  .month h2 { 
-    text-align: center; 
-    margin-bottom: 1rem; 
-    font-size: 1.4rem; 
+  .month h2 {
+    text-align: center;
+    margin-bottom: 1rem;
+    font-size: 1.4rem;
     font-weight: 600;
     color: var(--primary);
   }
-  .days { 
-    display: grid; 
-    grid-template-columns: repeat(7, 1fr); 
-    gap: 8px; 
-    font-size: 0.9rem; 
+  .days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 8px;
+    font-size: 0.9rem;
   }
-  .day { 
+  .day {
     height: 46px;
     display: flex;
     align-items: center;
@@ -183,9 +185,9 @@
     position: relative;
     overflow: hidden;
   }
-  .day:hover { 
-    transform: scale(1.08); 
-    box-shadow: 0 6px 16px rgba(0,0,0,0.12); 
+  .day:hover {
+    transform: scale(1.08);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.12);
   }
   .vacation { background: var(--vacation); color: white; }
   .vacation-prev { background: var(--vacation-prev); color: white; }
@@ -193,8 +195,8 @@
   .holiday-national { background: var(--holiday-national); color: white; font-weight: 500; }
   .holiday-local { background: var(--holiday-local); color: white; font-weight: 500; }
   .weekend { background: var(--weekend); color: var(--text); opacity: 0.9; }
-  .today { 
-    border: 4px solid var(--primary) !important; 
+  .today {
+    border: 4px solid var(--primary) !important;
     font-weight: bold;
     box-shadow: 0 0 20px rgba(76, 110, 245, 0.4);
   }
@@ -256,7 +258,7 @@
 </style>
 </head>
 <body>
-<h1>Calendario Vacaciones </h1>
+<h1>Calendario Vacaciones León</h1>
 <div class="year-selector">
   <button id="prevYear">« Año anterior</button>
   <input type="number" id="yearInput" value="2026" min="2000" max="2100">
@@ -292,6 +294,109 @@
 <div class="calendar" id="calendar"></div>
 
 <script>
+// === TU CONFIGURACIÓN DE FIREBASE ===
+const firebaseConfig = {
+  apiKey: "AIzaSyD9zUGS1BuBiGYQ0yAj26qnUT2CggYBlhA",
+  authDomain: "calendario-vacaciones-b7825.firebaseapp.com",
+  projectId: "calendario-vacaciones-b7825",
+  storageBucket: "calendario-vacaciones-b7825.firebasestorage.app",
+  messagingSenderId: "472325131890",
+  appId: "1:472325131890:web:ca615775a68bf224ddbceb",
+  measurementId: "G-HQKXEEPGMZ"
+};
+
+// Inicializar Firebase
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+let userId = null;
+
+// Autenticación anónima
+firebase.auth().signInAnonymously()
+  .then((cred) => {
+    userId = cred.user.uid;
+    console.log("Conectado a Firebase con ID:", userId);
+    loadData();
+  })
+  .catch((error) => {
+    console.error("Error de autenticación Firebase:", error);
+    alert("No se pudo conectar a Firebase. Se usará almacenamiento local.");
+    loadDataLocal();
+  });
+
+// Helpers para convertir Sets ↔ Arrays
+function convertToSets(data) {
+  const converted = {};
+  for (const y in data) {
+    converted[y] = {
+      vacation: new Set(data[y].vacation || []),
+      vacationPrev: new Set(data[y].vacationPrev || []),
+      medical: new Set(data[y].medical || [])
+    };
+  }
+  return converted;
+}
+
+function convertToArrays(data) {
+  const converted = {};
+  for (const y in data) {
+    converted[y] = {
+      vacation: Array.from(data[y].vacation),
+      vacationPrev: Array.from(data[y].vacationPrev),
+      medical: Array.from(data[y].medical)
+    };
+  }
+  return converted;
+}
+
+// Cargar datos
+function loadData() {
+  if (!userId) return loadDataLocal();
+  db.collection("calendarios").doc(userId).get()
+    .then((doc) => {
+      if (doc.exists) {
+        const data = doc.data();
+        yearData = convertToSets(data.yearData || {});
+        carryOver = data.carryOver || {};
+      }
+      createCalendar(currentYear);
+    })
+    .catch((error) => {
+      console.error("Error cargando datos:", error);
+      loadDataLocal();
+    });
+}
+
+function loadDataLocal() {
+  const saved = localStorage.getItem('calendarData');
+  if (saved) {
+    const parsed = JSON.parse(saved);
+    yearData = convertToSets(parsed.yearData || {});
+    carryOver = parsed.carryOver || {};
+  }
+  createCalendar(currentYear);
+}
+
+// Guardar datos
+function saveData() {
+  if (userId) {
+    const toSave = {
+      yearData: convertToArrays(yearData),
+      carryOver: carryOver,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+    db.collection("calendarios").doc(userId).set(toSave)
+      .catch((error) => console.error("Error guardando en Firebase:", error));
+  }
+  // Backup local siempre
+  localStorage.setItem('calendarData', JSON.stringify({
+    yearData: convertToArrays(yearData),
+    carryOver: carryOver
+  }));
+}
+
+// === Todo el resto del código JavaScript (holidays, createCalendar, etc.) ===
+// (Es exactamente el mismo que tenías antes, solo copio la parte inicial para no alargar)
+
 let currentYear = new Date().getFullYear();
 const vacationLimit = 23;
 const vacationCount = document.getElementById("vacationCount");
@@ -335,20 +440,15 @@ function getEasterRelatedHolidays(year){
 
 function getLocalAndTransferredHolidays(year){
   const holidays = new Set();
-
   holidays.add(`${year}-4-23`);
   holidays.add(`${year}-6-24`);
-
   let sanFroilan = new Date(year, 9, 5);
   if (sanFroilan.getDay() === 0) sanFroilan.setDate(6);
   holidays.add(`${year}-${sanFroilan.getMonth()+1}-${sanFroilan.getDate()}`);
-
   const dec6 = new Date(year, 11, 6);
   if (dec6.getDay() === 0) holidays.add(`${year}-12-7`);
-
   const nov1 = new Date(year, 10, 1);
   if (nov1.getDay() === 0) holidays.add(`${year}-11-2`);
-
   return holidays;
 }
 
@@ -357,35 +457,6 @@ function getHolidaySets(year){
     national: new Set([...getFixedHolidays(year), ...getEasterRelatedHolidays(year)]),
     local: getLocalAndTransferredHolidays(year)
   };
-}
-
-function loadData() {
-  const saved = localStorage.getItem('calendarData');
-  if (saved) {
-    const parsed = JSON.parse(saved);
-    for (const y in parsed.yearData) {
-      yearData[y] = {
-        vacation: new Set(parsed.yearData[y].vacation || []),
-        vacationPrev: new Set(parsed.yearData[y].vacationPrev || []),
-        medical: new Set(parsed.yearData[y].medical || [])
-      };
-    }
-    carryOver = parsed.carryOver || {};
-  }
-}
-function saveData() {
-  const toSave = {
-    yearData: {},
-    carryOver: carryOver
-  };
-  for (const y in yearData) {
-    toSave.yearData[y] = {
-      vacation: Array.from(yearData[y].vacation),
-      vacationPrev: Array.from(yearData[y].vacationPrev),
-      medical: Array.from(yearData[y].medical)
-    };
-  }
-  localStorage.setItem('calendarData', JSON.stringify(toSave));
 }
 
 function calculateCarryOver(year) {
@@ -412,31 +483,24 @@ function ensureCarryOverUpTo(prevYear) {
 function createCalendar(year){
   currentYear = year;
   yearInput.value = year;
-
   ensureCarryOverUpTo(year - 1);
-
   const holidays = getHolidaySets(year);
   const nationalHolidays = holidays.national;
   const localHolidays = holidays.local;
-
   if (!yearData[year]) {
     yearData[year] = { vacation: new Set(), vacationPrev: new Set(), medical: new Set() };
   }
-
   calendar.innerHTML = "";
   for(let m = 0; m < 12; m++){
     const firstDay = new Date(year, m, 1).getDay();
     const totalDays = new Date(year, m+1, 0).getDate();
-
     const monthDiv = document.createElement("div");
     monthDiv.className = "month";
     const title = document.createElement("h2");
     title.textContent = months[m];
     monthDiv.appendChild(title);
-
     const daysDiv = document.createElement("div");
     daysDiv.className = "days";
-
     dayNames.forEach(d => {
       const label = document.createElement("div");
       label.className = "day";
@@ -444,24 +508,18 @@ function createCalendar(year){
       label.textContent = d;
       daysDiv.appendChild(label);
     });
-
     const startDay = (firstDay + 6) % 7;
     for(let i = 0; i < startDay; i++) daysDiv.appendChild(document.createElement("div"));
-
     for(let d = 1; d <= totalDays; d++){
       const dayDiv = document.createElement("div");
       dayDiv.className = "day";
       const dateKey = `${year}-${m+1}-${d}`;
       dayDiv.dataset.date = dateKey;
-
       const dayOfWeek = new Date(year, m, d).getDay();
-
       if (dateKey === getTodayKey()) dayDiv.classList.add("today");
-
       const numberSpan = document.createElement("span");
       numberSpan.textContent = d;
       dayDiv.appendChild(numberSpan);
-
       if (nationalHolidays.has(dateKey)) {
         dayDiv.classList.add("holiday-national");
         const tooltip = document.createElement("div");
@@ -485,7 +543,6 @@ function createCalendar(year){
       } else {
         dayDiv.addEventListener("click", () => handleDayClick(dayDiv, year, m, d));
       }
-
       if (yearData[year].vacation.has(dateKey)) {
         dayDiv.classList.add("vacation");
       }
@@ -499,7 +556,6 @@ function createCalendar(year){
         badge.textContent = "AN";
         dayDiv.appendChild(badge);
       }
-
       daysDiv.appendChild(dayDiv);
     }
     monthDiv.appendChild(daysDiv);
@@ -524,18 +580,14 @@ function getTodayKey(){
 function handleDayClick(dayDiv, year, month, day){
   const dateKey = `${year}-${month+1}-${day}`;
   const data = yearData[year];
-
   dayDiv.classList.remove("vacation", "vacation-prev", "medical");
   const badge = dayDiv.querySelector(".badge-an");
   if (badge) badge.remove();
-
   data.vacation.delete(dateKey);
   data.vacationPrev.delete(dateKey);
   data.medical.delete(dateKey);
-
   const type = prompt("¿Qué quieres marcar? (v = vacaciones, m = médico)").toLowerCase().trim();
   if (type !== "v" && type !== "m") return;
-
   if (type === "m") {
     data.medical.add(dateKey);
     dayDiv.classList.add("medical");
@@ -543,30 +595,25 @@ function handleDayClick(dayDiv, year, month, day){
     saveData();
     return;
   }
-
   const available = getAvailableVacationDays();
   if (available <= 0) {
     alert("No te quedan días de vacaciones disponibles.");
     return;
   }
-
   const carry = carryOver[year - 1] || 0;
   const usedPrev = data.vacationPrev.size;
   const remainingCarry = carry - usedPrev;
-
   let usePrev = false;
   if (remainingCarry > 0) {
     usePrev = confirm(`Tienes ${remainingCarry} días del año anterior disponibles. ¿Quieres usar uno de ellos?`);
   } else {
     alert(`No quedan días del año anterior. Se usará del año actual.`);
   }
-
   const dayOfWeek = new Date(year, month, day).getDay();
   let markWeek = false;
   if (dayOfWeek >= 1 && dayOfWeek <= 5) {
     markWeek = confirm("¿Quieres marcar vacaciones hasta el viernes de esta semana?");
   }
-
   let daysToMark = [];
   if (markWeek) {
     for (let i = dayOfWeek; i <= 5; i++) {
@@ -586,12 +633,10 @@ function handleDayClick(dayDiv, year, month, day){
   } else {
     daysToMark.push({key: dateKey, div: dayDiv, num: day});
   }
-
   if (daysToMark.length > available) {
     alert(`No tienes suficientes días. Necesitas ${daysToMark.length} pero solo quedan ${available}.`);
     return;
   }
-
   let prevToUse = usePrev ? Math.min(daysToMark.length, remainingCarry) : 0;
   daysToMark.forEach(item => {
     if (prevToUse > 0) {
@@ -607,7 +652,6 @@ function handleDayClick(dayDiv, year, month, day){
       item.div.classList.add("vacation");
     }
   });
-
   delete carryOver[year];
   updateCounters();
   saveData();
@@ -618,7 +662,6 @@ function updateCounters(){
   const data = yearData[currentYear] || {vacation: new Set(), vacationPrev: new Set(), medical: new Set()};
   const carry = carryOver[currentYear - 1] || 0;
   const usedPrev = data.vacationPrev.size;
-
   vacationCount.textContent = data.vacation.size;
   vacationPrevCount.textContent = `${usedPrev} (de ${carry} disponibles)`;
   medicalCount.textContent = data.medical.size;
@@ -633,7 +676,6 @@ document.getElementById("resetYear").addEventListener("click", () => {
   }
 });
 
-loadData();
 document.getElementById("prevYear").addEventListener("click", () => createCalendar(currentYear - 1));
 document.getElementById("nextYear").addEventListener("click", () => createCalendar(currentYear + 1));
 yearInput.addEventListener("change", () => createCalendar(parseInt(yearInput.value)));
