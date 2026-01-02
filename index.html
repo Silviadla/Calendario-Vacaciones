@@ -71,7 +71,7 @@ const months = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto
 let yearData = {};      
 let carryOver = {};     
 
-// --- HOLIDAYS --- (igual que antes)
+// --- HOLIDAYS ---
 function getFixedHolidays(year){
   const fixed = [
     {month:1,day:1},{month:1,day:6},{month:5,day:1},
@@ -79,36 +79,52 @@ function getFixedHolidays(year){
     {month:12,day:6},{month:12,day:8},{month:12,day:25}
   ];
   return fixed.map(f=>{
-    let date=new Date(year,f.month-1,f.day);
-    if(f.month===10 && f.day===12 && date.getDay()===0) date.setDate(13);
+    let date = new Date(year, f.month-1, f.day);
+    // Traslado del 12 octubre si cae domingo (nacional)
+    if (f.month === 10 && f.day === 12 && date.getDay() === 0) date.setDate(13);
     return `${year}-${date.getMonth()+1}-${date.getDate()}`;
   });
 }
+
 function getEasterSunday(year){
   const f=Math.floor,G=year%19,C=f(year/100),H=(C-f(C/4)-f((8*C+13)/25)+19*G+15)%30,
   I=H-f(H/28)*(1-f(H/28)*f(29/(H+1))*f((21-G)/11)),J=(year+f(year/4)+I+2-C+f(C/4))%7,
   L=I-J,month=3+f((L+40)/44),day=L+28-31*f(month/4);
   return new Date(year,month-1,day);
 }
+
 function getEasterRelatedHolidays(year){
   const easter=getEasterSunday(year);
   const thursday=new Date(easter); thursday.setDate(easter.getDate()-3);
   const friday=new Date(easter); friday.setDate(easter.getDate()-2);
   return [`${year}-${thursday.getMonth()+1}-${thursday.getDate()}`,`${year}-${friday.getMonth()+1}-${friday.getDate()}`];
 }
-function getLocalHolidays(year){
-  const holidays=[];
-  holidays.push(`${year}-6-24`);
-  let sanFroilan=new Date(year,9,5);
-  if(sanFroilan.getDay()===0) sanFroilan.setDate(6);
-  holidays.push(`${year}-${sanFroilan.getMonth()+1}-${sanFroilan.getDate()}`);
-  holidays.push(`${year}-4-23`);
+
+function getLocalAndTransferredHolidays(year){
+  const holidays = new Set();
+
+  // Locales de León ciudad
+  holidays.add(`${year}-4-23`); // Día de Castilla y León
+  holidays.add(`${year}-6-24`); // San Juan
+
+  // Traslados autonómicos Castilla y León
+  const dec6 = new Date(year, 11, 6); // 6 diciembre
+  if (dec6.getDay() === 0) { // domingo
+    holidays.add(`${year}-12-7`); // trasladado al lunes 7
+  }
+
+  const nov1 = new Date(year, 10, 1); // 1 noviembre
+  if (nov1.getDay() === 0) { // domingo
+    holidays.add(`${year}-11-2`); // trasladado al lunes 2
+  }
+
   return holidays;
 }
+
 function getHolidaySets(year){
   return { 
     national: new Set([...getFixedHolidays(year), ...getEasterRelatedHolidays(year)]),
-    local: new Set(getLocalHolidays(year)) 
+    local: getLocalAndTransferredHolidays(year)
   };
 }
 
@@ -158,7 +174,6 @@ function calculateCarryOver(year) {
   return carryOver[year];
 }
 
-// Asegurar que todos los carryOver desde 2025 hasta prevYear estén calculados
 function ensureCarryOverUpTo(prevYear) {
   for (let y = 2025; y <= prevYear; y++) {
     calculateCarryOver(y);
@@ -170,7 +185,6 @@ function createCalendar(year){
   currentYear = year;
   yearInput.value = year;
 
-  // Calcular toda la cadena desde 2025 hasta el año anterior
   ensureCarryOverUpTo(year - 1);
 
   const holidays = getHolidaySets(year);
@@ -261,7 +275,7 @@ function handleDayClick(dayDiv, year, month, day){
     data.vacationPrev.delete(dateKey);
     data.medical.delete(dateKey);
     dayDiv.textContent = day;
-    delete carryOver[year]; // invalidar para recalcular cadena
+    delete carryOver[year];
     updateCounters();
     saveData();
     return;
@@ -339,7 +353,7 @@ function handleDayClick(dayDiv, year, month, day){
     }
   });
 
-  delete carryOver[year]; // invalidar para años siguientes
+  delete carryOver[year];
   updateCounters();
   saveData();
 }
