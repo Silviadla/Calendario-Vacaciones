@@ -58,7 +58,7 @@
 <div class="calendar" id="calendar"></div>
 <script>
 let currentYear = new Date().getFullYear();
-const vacationLimit = 23; // Días del año actual
+const vacationLimit = 23;
 const vacationCount = document.getElementById("vacationCount");
 const vacationPrevCount = document.getElementById("vacationPrevCount");
 const medicalCount = document.getElementById("medicalCount");
@@ -68,10 +68,10 @@ const calendar = document.getElementById("calendar");
 const dayNames = ["L","M","X","J","V","S","D"];
 const months = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 
-let yearData = {};      // { year: { vacation: Set (actual), vacationPrev: Set (del anterior), medical: Set } }
-let carryOver = {};     // carryOver[year] = días sobrantes del año year que se pueden usar en year+1
+let yearData = {};      
+let carryOver = {};     
 
-// --- HOLIDAYS (igual que antes) ---
+// --- HOLIDAYS ---
 function getFixedHolidays(year){
   const fixed = [
     {month:1,day:1},{month:1,day:6},{month:5,day:1},
@@ -142,7 +142,7 @@ function saveData() {
   localStorage.setItem('calendarData', JSON.stringify(toSave));
 }
 
-// --- CALENDAR (igual que antes, con pequeñas mejoras) ---
+// --- CALENDAR ---
 function createCalendar(year){
   currentYear = year;
   yearInput.value = year;
@@ -155,7 +155,6 @@ function createCalendar(year){
     yearData[year] = { vacation: new Set(), vacationPrev: new Set(), medical: new Set() };
   }
 
-  // Calcular carryOver del año anterior
   const prevYear = year - 1;
   if (carryOver[prevYear] === undefined && yearData[prevYear]) {
     const prev = yearData[prevYear];
@@ -204,10 +203,11 @@ function createCalendar(year){
       else if (dayOfWeek === 0 || dayOfWeek === 6) dayDiv.classList.add("weekend");
       else dayDiv.addEventListener("click", () => handleDayClick(dayDiv, year, m, d));
 
-      if (yearData[year].vacation.has(dateKey)) dayDiv.classList.add("vacation");
       if (yearData[year].vacationPrev.has(dateKey)) {
         dayDiv.classList.add("vacation-prev");
         dayDiv.textContent = d + " AN";
+      } else if (yearData[year].vacation.has(dateKey)) {
+        dayDiv.classList.add("vacation");
       }
       if (yearData[year].medical.has(dateKey)) dayDiv.classList.add("medical");
 
@@ -273,6 +273,8 @@ function handleDayClick(dayDiv, year, month, day){
   let usePrev = false;
   if (remainingCarry > 0) {
     usePrev = confirm(`Tienes ${remainingCarry} días del año anterior disponibles. ¿Quieres usar uno de ellos?`);
+  } else {
+    alert(`No quedan días del año anterior. Se usará uno del año actual (${vacationLimit - data.vacation.size} disponibles).`);
   }
 
   const dayOfWeek = new Date(year, month, day).getDay();
@@ -294,10 +296,10 @@ function handleDayClick(dayDiv, year, month, day){
       const tempDow = tempDate.getDay();
       if (tempDow === 0 || tempDow === 6) continue;
       if (getHolidaySets(year).national.has(tempKey) || getHolidaySets(year).local.has(tempKey)) continue;
-      daysToMark.push(tempKey);
+      daysToMark.push({key: tempKey, div: document.querySelector(`.day[data-date='${tempKey}']`), num: tempDate.getDate()});
     }
   } else {
-    daysToMark.push(dateKey);
+    daysToMark.push({key: dateKey, div: dayDiv, num: day});
   }
 
   if (daysToMark.length > available) {
@@ -305,16 +307,17 @@ function handleDayClick(dayDiv, year, month, day){
     return;
   }
 
-  daysToMark.forEach(key => {
-    const div = document.querySelector(`.day[data-date='${key}']`);
-    const dNum = parseInt(div.textContent.replace(" AN", ""));
-    if (usePrev && remainingCarry > data.vacationPrev.size) {
-      data.vacationPrev.add(key);
-      div.classList.add("vacation-prev");
-      div.textContent = dNum + " AN";
+  // Marcar priorizando los del año anterior
+  let prevToUse = Math.min(daysToMark.length, remainingCarry);
+  daysToMark.forEach(item => {
+    if (prevToUse > 0) {
+      data.vacationPrev.add(item.key);
+      item.div.classList.add("vacation-prev");
+      item.div.textContent = item.num + " AN";
+      prevToUse--;
     } else {
-      data.vacation.add(key);
-      div.classList.add("vacation");
+      data.vacation.add(item.key);
+      item.div.classList.add("vacation");
     }
   });
 
