@@ -119,9 +119,9 @@ function loadData() {
     const parsed = JSON.parse(saved);
     for (const y in parsed.yearData) {
       yearData[y] = {
-        vacation: new Set(parsed.yearData[y].vacation),
-        vacationPrev: new Set(parsed.yearData[y].vacationPrev),
-        medical: new Set(parsed.yearData[y].medical)
+        vacation: new Set(parsed.yearData[y].vacation || []),
+        vacationPrev: new Set(parsed.yearData[y].vacationPrev || []),
+        medical: new Set(parsed.yearData[y].medical || [])
       };
     }
     carryOver = parsed.carryOver || {};
@@ -142,10 +142,28 @@ function saveData() {
   localStorage.setItem('calendarData', JSON.stringify(toSave));
 }
 
+// --- CARRY OVER ---
+function calculateCarryOver(prevYear) {
+  if (carryOver[prevYear] !== undefined) return;
+  if (!yearData[prevYear]) {
+    carryOver[prevYear] = 0;
+    return;
+  }
+  const prev = yearData[prevYear];
+  const totalUsed = prev.vacation.size + prev.vacationPrev.size;
+  const previousCarry = carryOver[prevYear - 1] || 0;
+  const leftover = vacationLimit + previousCarry - totalUsed;
+  carryOver[prevYear] = Math.max(0, leftover);
+}
+
 // --- CALENDAR ---
 function createCalendar(year){
   currentYear = year;
   yearInput.value = year;
+
+  // Asegurar carryOver del año anterior
+  const prevYear = year - 1;
+  calculateCarryOver(prevYear);
 
   const holidays = getHolidaySets(year);
   const nationalHolidays = holidays.national;
@@ -153,14 +171,6 @@ function createCalendar(year){
 
   if (!yearData[year]) {
     yearData[year] = { vacation: new Set(), vacationPrev: new Set(), medical: new Set() };
-  }
-
-  const prevYear = year - 1;
-  if (carryOver[prevYear] === undefined && yearData[prevYear]) {
-    const prev = yearData[prevYear];
-    const totalUsedPrev = prev.vacation.size + prev.vacationPrev.size;
-    const leftover = vacationLimit - totalUsedPrev + (carryOver[prevYear - 1] || 0);
-    carryOver[prevYear] = Math.max(0, leftover);
   }
 
   calendar.innerHTML = "";
@@ -274,7 +284,7 @@ function handleDayClick(dayDiv, year, month, day){
   if (remainingCarry > 0) {
     usePrev = confirm(`Tienes ${remainingCarry} días del año anterior disponibles. ¿Quieres usar uno de ellos?`);
   } else {
-    alert(`No quedan días del año anterior. Se usará uno del año actual (${vacationLimit - data.vacation.size} disponibles).`);
+    alert(`No quedan días del año anterior. Se usará uno del año actual.`);
   }
 
   const dayOfWeek = new Date(year, month, day).getDay();
@@ -296,7 +306,8 @@ function handleDayClick(dayDiv, year, month, day){
       const tempDow = tempDate.getDay();
       if (tempDow === 0 || tempDow === 6) continue;
       if (getHolidaySets(year).national.has(tempKey) || getHolidaySets(year).local.has(tempKey)) continue;
-      daysToMark.push({key: tempKey, div: document.querySelector(`.day[data-date='${tempKey}']`), num: tempDate.getDate()});
+      const div = document.querySelector(`.day[data-date='${tempKey}']`);
+      daysToMark.push({key: tempKey, div: div, num: tempDate.getDate()});
     }
   } else {
     daysToMark.push({key: dateKey, div: dayDiv, num: day});
@@ -307,8 +318,8 @@ function handleDayClick(dayDiv, year, month, day){
     return;
   }
 
-  // Marcar priorizando los del año anterior
-  let prevToUse = Math.min(daysToMark.length, remainingCarry);
+  // Marcar priorizando del año anterior si el usuario dijo sí
+  let prevToUse = usePrev ? Math.min(daysToMark.length, remainingCarry) : 0;
   daysToMark.forEach(item => {
     if (prevToUse > 0) {
       data.vacationPrev.add(item.key);
@@ -341,7 +352,10 @@ function updateCounters(){
 loadData();
 document.getElementById("prevYear").addEventListener("click", () => createCalendar(currentYear - 1));
 document.getElementById("nextYear").addEventListener("click", () => createCalendar(currentYear + 1));
-yearInput.addEventListener("change", () => createCalendar(parseInt(yearInput.value)));
+yearInput.addEventListener("change", () => {
+  const newYear = parseInt(yearInput.value);
+  createCalendar(newYear);
+});
 
 createCalendar(currentYear);
 </script>
