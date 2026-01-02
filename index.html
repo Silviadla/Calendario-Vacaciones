@@ -4,14 +4,12 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Calendario Vacaciones</title>
-  
 <link rel="apple-touch-icon" href="vacaciones.jpg">
 <link rel="icon" href="vacaciones.jpg" type="image/jpeg">
-
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Vacaciones">
-  
+
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
@@ -34,7 +32,6 @@
   * { box-sizing: border-box; margin:0; padding:0; }
   body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); padding: 1.5rem 1rem; line-height: 1.6; transition: background 0.3s; }
 
-  /* --- ESTILOS LOGIN --- */
   #authSection { max-width: 400px; margin: 50px auto; padding: 2.5rem; background: var(--card-bg); border-radius: 24px; box-shadow: var(--shadow); text-align: center; }
   .auth-input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 12px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font-size: 1rem; }
   .auth-btn { width: 100%; padding: 13px; margin: 10px 0; border-radius: 12px; border: none; font-weight: 600; cursor: pointer; transition: transform 0.2s; }
@@ -45,7 +42,6 @@
   .pass-container { position: relative; width: 100%; }
   .toggle-eye { position: absolute; right: 15px; top: 22px; cursor: pointer; opacity: 0.6; display: flex; align-items: center; }
 
-  /* --- ESTILOS CALENDARIO --- */
   h1 { text-align: center; font-size: 2.2rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--primary); }
   .user-info { text-align: center; margin-bottom: 1.8rem; font-size: 0.85rem; opacity: 0.8; }
   .logout-link { color: #e53e3e; cursor: pointer; text-decoration: underline; margin-left: 10px; }
@@ -92,21 +88,16 @@
   <div id="authSection">
     <h2 style="margin-bottom: 10px; color: var(--primary);">Bienvenido</h2>
     <p style="font-size: 0.9rem; margin-bottom: 20px;">Gestiona tus vacaciones en la nube</p>
-    
     <input type="email" id="email" class="auth-input" placeholder="Correo electrónico">
-    
     <div class="pass-container">
       <input type="password" id="pass" class="auth-input" placeholder="Contraseña" style="padding-right: 45px;">
       <span class="toggle-eye" onclick="togglePassword()">
         <svg id="eyeIcon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
       </span>
     </div>
-
     <button onclick="loginEmail()" class="auth-btn btn-email">Entrar / Registrar Email</button>
     <a href="#" class="forgot-link" onclick="recuperarPassword()">¿Has olvidado tu contraseña?</a>
-
     <div style="margin: 20px 0; border-top: 1px solid var(--border);"></div>
-
     <button onclick="loginAnonimo()" class="auth-btn btn-anon">Entrar como Invitado</button>
   </div>
 
@@ -117,47 +108,29 @@
       <span class="logout-link" onclick="logout()">Cerrar sesión</span>
       <span id="syncText" class="sync-status">Sincronizado</span>
     </div>
-
     <div class="year-selector">
       <button id="prevYear">« Año anterior</button>
       <input type="number" id="yearInput" value="2026" min="2000" max="2100">
       <button id="nextYear">Año siguiente »</button>
     </div>
-
     <div class="counters">
-      <div class="counter-box">
-        <div>Días usados (año actual)</div>
-        <strong id="vacationCount">0</strong>
-      </div>
-      <div class="counter-box">
-        <div>Días año anterior usados</div>
-        <strong id="vacationPrevCount">0</strong>
-      </div>
-      <div class="counter-box">
-        <div>Días médicos</div>
-        <strong id="medicalCount">0</strong>
-      </div>
-      <div class="counter-box">
-        <div>Días totales disponibles</div>
-        <strong id="remaining" class="big-remaining">23</strong>
-      </div>
+      <div class="counter-box"><div>Días usados (año actual)</div><strong id="vacationCount">0</strong></div>
+      <div class="counter-box"><div>Días año anterior usados</div><strong id="vacationPrevCount">0</strong></div>
+      <div class="counter-box"><div>Días médicos</div><strong id="medicalCount">0</strong></div>
+      <div class="counter-box"><div>Días totales disponibles</div><strong id="remaining" class="big-remaining">23</strong></div>
     </div>
-
     <button id="resetYear">Borrar todas las marcas de este año</button>
-
     <div class="labels">
       <span><span class="dot" style="background:var(--vacation);"></span> Vacaciones año actual</span>
       <span><span class="dot" style="background:var(--vacation-prev);"></span> Vacaciones año anterior (AN)</span>
       <span><span class="dot" style="background:var(--medical);"></span> Médico</span>
       <span><span class="dot" style="background:var(--holiday-national);"></span> Festivo Nacional</span>
-      <span><span class="dot" style="background:var(--holiday-local);"></span> Festivo Local / Trasladado</span>
+      <span><span class="dot" style="background:var(--holiday-local);"></span> Festivo León</span>
     </div>
-
     <div class="calendar" id="calendar"></div>
   </div>
 
 <script>
-// === CONFIGURACIÓN FIREBASE ===
 const firebaseConfig = {
   apiKey: "AIzaSyD9zUGS1BuBiGYQ0yAj26qnUT2CggYBlhA",
   authDomain: "calendario-vacaciones-b7825.firebaseapp.com",
@@ -170,8 +143,6 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 let userId = null;
-
-// --- LÓGICA DE AUTENTICACIÓN ---
 
 firebase.auth().onAuthStateChanged((user) => {
   if (user) {
@@ -190,13 +161,8 @@ firebase.auth().onAuthStateChanged((user) => {
 function togglePassword() {
   const passInput = document.getElementById('pass');
   const eyeIcon = document.getElementById('eyeIcon');
-  if (passInput.type === 'password') {
-    passInput.type = 'text';
-    eyeIcon.style.color = 'var(--primary)';
-  } else {
-    passInput.type = 'password';
-    eyeIcon.style.color = 'currentColor';
-  }
+  passInput.type = passInput.type === 'password' ? 'text' : 'password';
+  eyeIcon.style.color = passInput.type === 'text' ? 'var(--primary)' : 'currentColor';
 }
 
 function loginEmail() {
@@ -210,23 +176,12 @@ function loginEmail() {
 
 function recuperarPassword() {
   const email = document.getElementById('email').value;
-  if (!email) return alert("Escribe tu correo arriba para enviarte el enlace de recuperación.");
-  
-  firebase.auth().sendPasswordResetEmail(email)
-    .then(() => alert("✅ ¡Correo enviado! Revisa tu bandeja de entrada o spam."))
-    .catch(e => alert("❌ Error: " + e.message));
+  if (!email) return alert("Escribe tu correo arriba.");
+  firebase.auth().sendPasswordResetEmail(email).then(() => alert("✅ Correo enviado.")).catch(e => alert("❌ Error: " + e.message));
 }
 
-function loginAnonimo() {
-  firebase.auth().signInAnonymously()
-    .catch(e => alert("❌ Error: Asegúrate de habilitar 'Anónimo' en la consola de Firebase. " + e.message));
-}
-
-function logout() {
-  firebase.auth().signOut();
-}
-
-// --- LÓGICA DEL CALENDARIO ---
+function loginAnonimo() { firebase.auth().signInAnonymously(); }
+function logout() { firebase.auth().signOut(); }
 
 let currentYear = 2026;
 const vacationLimit = 23;
@@ -246,9 +201,6 @@ const months = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto
 
 function loadData() {
   if (!userId) return;
-  syncText.textContent = "Cargando...";
-  syncText.style.color = "orange";
-
   db.collection("calendarios").doc(userId).get().then((doc) => {
     if (doc.exists) {
       const data = doc.data();
@@ -256,30 +208,15 @@ function loadData() {
       carryOver = data.carryOver || {};
     }
     createCalendar(currentYear);
-    syncText.textContent = "Sincronizado";
-    syncText.style.color = "var(--vacation)";
-  }).catch((e) => {
-    syncText.textContent = "Error de conexión";
-    syncText.style.color = "red";
-    createCalendar(currentYear);
   });
 }
 
 function saveData() {
   if (!userId) return;
-  syncText.textContent = "Guardando...";
-  syncText.style.color = "orange";
-
   db.collection("calendarios").doc(userId).set({
     yearData: convertToArrays(yearData),
     carryOver: carryOver,
     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-  }).then(() => {
-    syncText.textContent = "Sincronizado";
-    syncText.style.color = "var(--vacation)";
-  }).catch(() => {
-    syncText.textContent = "Error al guardar";
-    syncText.style.color = "red";
   });
 }
 
@@ -389,6 +326,7 @@ function createCalendar(year){
       dayDiv.innerHTML = `<span>${d}</span>`;
       const dayOfWeek = new Date(year, m, d).getDay();
       if (dateKey === `${new Date().getFullYear()}-${new Date().getMonth()+1}-${new Date().getDate()}`) dayDiv.classList.add("today");
+      
       if (holidays.national.has(dateKey)) {
         dayDiv.classList.add("holiday-national");
         dayDiv.innerHTML += `<div class="tooltip">Festivo Nacional</div>`;
@@ -417,7 +355,11 @@ function createCalendar(year){
 function handleDayClick(dayDiv, year, month, day){
   const dateKey = `${year}-${month+1}-${day}`;
   const data = yearData[year];
+  const holidays = getHolidaySets(year);
+  
+  // Limpiar marcas previas
   data.vacation.delete(dateKey); data.vacationPrev.delete(dateKey); data.medical.delete(dateKey);
+  
   const type = prompt("¿Qué quieres marcar? (v = vacaciones, m = médico, c = borrar)").toLowerCase();
   if (type === "m") {
     data.medical.add(dateKey);
@@ -425,8 +367,10 @@ function handleDayClick(dayDiv, year, month, day){
     const carry = calculateCarryOver(year - 1);
     const remainingCarry = carry - data.vacationPrev.size;
     let usePrev = (remainingCarry > 0) && confirm(`Usar día de año anterior? (Quedan ${remainingCarry})`);
+    
     const dow = new Date(year, month, day).getDay();
     let markWeek = (dow >= 1 && dow <= 5) && confirm("¿Marcar hasta el viernes?");
+    
     let daysToMark = [dateKey];
     if(markWeek) {
       for(let i=dow+1; i<=5; i++) {
@@ -435,9 +379,16 @@ function handleDayClick(dayDiv, year, month, day){
         daysToMark.push(tempKey);
       }
     }
+
     daysToMark.forEach(k => {
-      if(usePrev && (calculateCarryOver(year-1) - data.vacationPrev.size) > 0) data.vacationPrev.add(k);
-      else data.vacation.add(k);
+      // SOLO marcar si NO es festivo nacional ni local
+      if (!holidays.national.has(k) && !holidays.local.has(k)) {
+        if(usePrev && (calculateCarryOver(year-1) - data.vacationPrev.size) > 0) {
+          data.vacationPrev.add(k);
+        } else {
+          data.vacation.add(k);
+        }
+      }
     });
   }
   delete carryOver[year];
