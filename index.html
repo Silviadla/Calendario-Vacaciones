@@ -4,8 +4,8 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Calendario Vacaciones</title>
-<link rel="apple-touch-icon" href="vacaciones.jpeg">
-<link rel="icon" href="vacaciones.jpeg" type="image/jpeg">
+<link rel="apple-touch-icon" href="vacaciones.jpg">
+<link rel="icon" href="vacaciones.jpg" type="image/jpeg">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Vacaciones">
@@ -36,31 +36,25 @@
   .btn-email { background: var(--primary); color: white; }
   .btn-anon { background: transparent; border: 1px solid var(--border); color: var(--text); }
   .forgot-link { font-size: 0.8rem; margin-top: 8px; display: block; color: var(--primary); text-decoration: none; cursor: pointer; }
- 
   .pass-container { position: relative; width: 100%; }
   .toggle-eye { position: absolute; right: 15px; top: 22px; cursor: pointer; opacity: 0.6; display: flex; align-items: center; }
   h1 { text-align: center; font-size: 2.2rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--primary); }
   .user-info { text-align: center; margin-bottom: 1.8rem; font-size: 0.85rem; opacity: 0.8; }
   .logout-link { color: #e53e3e; cursor: pointer; text-decoration: underline; margin-left: 10px; }
   .sync-status { font-size: 0.75rem; color: var(--vacation); font-weight: bold; margin-top: 5px; display: block; }
- 
   .year-selector { text-align: center; margin-bottom: 1.5rem; }
   .year-selector button { padding: 0.6rem 1.2rem; margin: 0 0.4rem; border: 1px solid var(--border); background: var(--card-bg); color: var(--text); border-radius: 12px; cursor: pointer; font-weight: 500; transition: all 0.3s; }
   .year-selector button:hover { background: var(--primary); color: white; border-color: var(--primary); }
   .year-selector input { padding: 0.6rem; width: 100px; text-align: center; border: 1px solid var(--border); background: var(--card-bg); border-radius: 12px; font-size: 1.1rem; font-weight: 500; }
- 
   .counters { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.8rem; margin: 1.5rem 0; }
   .counter-box { background: var(--card-bg); padding: 0.9rem 0.8rem; border-radius: 14px; box-shadow: var(--shadow); text-align: center; border: 1px solid var(--border); }
   .counter-box div { font-size: 0.8rem; opacity: 0.85; margin-bottom: 0.4rem; font-weight: 500; }
   .counter-box strong { font-size: 1.6rem; font-weight: 700; }
   .big-remaining { font-size: 2rem !important; color: var(--primary); }
- 
   #resetYear { display: block; margin: 1.8rem auto; padding: 0.8rem 1.8rem; background: #e53e3e; color: white; border: none; border-radius: 12px; cursor: pointer; font-weight: 600; box-shadow: var(--shadow); }
- 
   .labels { display: flex; justify-content: center; gap: 1rem; margin: 1.5rem 0; flex-wrap: wrap; font-size: 0.9rem; font-weight: 500; }
   .labels span { display: flex; align-items: center; gap: 0.5rem; }
   .dot { width: 0.9rem; height: 0.9rem; border-radius: 50%; display: inline-block; }
- 
   .calendar { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem; width: 100%; }
   .month { background: var(--card-bg); border-radius: 20px; padding: 1.5rem; box-shadow: var(--shadow); border: 1px solid var(--border); }
   .month h2 { text-align: center; margin-bottom: 1rem; font-size: 1.4rem; font-weight: 600; color: var(--primary); }
@@ -98,7 +92,7 @@
   }
   .tooltip { 
     position: absolute; 
-    top: -50px; /* Más arriba para no tapar el día */
+    top: -50px; 
     left: 50%; 
     transform: translateX(-50%); 
     background: rgba(0,0,0,0.95); 
@@ -226,16 +220,22 @@ function togglePassword() {
 }
 
 function loginEmail() {
-  const email = document.getElementById('email').value;
+  const email = document.getElementById('email').value.trim();
   const pass = document.getElementById('pass').value;
   if(!email || !pass) return alert("Rellena email y contraseña");
   firebase.auth().signInWithEmailAndPassword(email, pass)
-    .catch(() => firebase.auth().createUserWithEmailAndPassword(email, pass))
-    .catch(e => alert("Error: " + e.message));
+    .catch((error) => {
+      if (error.code === 'auth/user-not-found') {
+        firebase.auth().createUserWithEmailAndPassword(email, pass)
+          .catch(e => alert("Error al crear cuenta: " + e.message));
+      } else {
+        alert("Error: " + error.message);
+      }
+    });
 }
 
 function recuperarPassword() {
-  const email = document.getElementById('email').value;
+  const email = document.getElementById('email').value.trim();
   if (!email) return alert("Escribe tu correo arriba.");
   firebase.auth().sendPasswordResetEmail(email).then(() => alert("✅ Correo enviado.")).catch(e => alert("❌ Error: " + e.message));
 }
@@ -390,7 +390,6 @@ function createCalendar(year){
   yearInput.value = year;
   ensureCarryOverUpTo(year - 1);
 
-  // Obtenemos festivos con nombres reales
   const holidays = getHolidaysForYear(year);
 
   if (!yearData[year]) yearData[year] = { vacation: new Set(), vacationPrev: new Set(), medical: new Set() };
@@ -418,13 +417,11 @@ function createCalendar(year){
       const dayOfWeek = new Date(year, m, d).getDay();
       if (dateKey === `${new Date().getFullYear()}-${new Date().getMonth()+1}-${new Date().getDate()}`) dayDiv.classList.add("today");
 
-      // === FESTIVOS CON TOOLTIP ===
       const holiday = holidays.get(dateKey);
       if (holiday) {
         dayDiv.classList.add(
           holiday.type === "national" ? "holiday-national" : "holiday-local"
         );
-
         const tooltip = document.createElement("div");
         tooltip.className = "tooltip";
         tooltip.textContent = holiday.name;
@@ -453,15 +450,12 @@ function createCalendar(year){
 document.addEventListener('touchstart', function(e) {
   let target = e.target.closest('.day');
   if (!target) return;
-
   let tooltip = target.querySelector('.tooltip');
   if (!tooltip) return;
-
   let timeout = setTimeout(() => {
     tooltip.style.opacity = '1';
     tooltip.style.transform = 'translateX(-50%) translateY(6px)';
-  }, 400); // 0.4 segundos
-
+  }, 400);
   let hide = () => {
     clearTimeout(timeout);
     if (tooltip) {
@@ -469,7 +463,6 @@ document.addEventListener('touchstart', function(e) {
       tooltip.style.transform = 'translateX(-50%)';
     }
   };
-
   target.addEventListener('touchend', hide, {once: true});
   target.addEventListener('touchcancel', hide, {once: true});
   target.addEventListener('touchmove', hide, {once: true});
@@ -478,16 +471,27 @@ document.addEventListener('touchstart', function(e) {
 function handleDayClick(dayDiv, year, month, day){
   const dateKey = `${year}-${month+1}-${day}`;
   const data = yearData[year];
-  const holidays = getHolidaySets(year);
+  // Limpiar todas las marcas y clases primero
+  dayDiv.classList.remove("vacation", "vacation-prev", "medical");
+  const badge = dayDiv.querySelector(".badge-an");
+  if (badge) badge.remove();
   data.vacation.delete(dateKey);
   data.vacationPrev.delete(dateKey);
   data.medical.delete(dateKey);
-  const type = prompt("¿Qué quieres marcar? (v = vacaciones, m = médico, c = borrar)");
-  if (!type) return;
-  if (type.toLowerCase() === "m") {
-    data.medical.add(dateKey);
+
+  const type = prompt("¿Qué quieres hacer?\n\nv = vacaciones\nm = médico\nc = borrar / cancelar").toLowerCase().trim();
+
+  if (type === "c" || !type) {
+    // Borrar o cancelar: ya limpiamos arriba, solo guardamos
+    saveData();
+    createCalendar(year);
+    return;
   }
-  if (type.toLowerCase() === "v") {
+
+  if (type === "m") {
+    data.medical.add(dateKey);
+    dayDiv.classList.add("medical");
+  } else if (type === "v") {
     const carry = calculateCarryOver(year - 1);
     const remainingCarry = carry - data.vacationPrev.size;
     const remainingCurrent = vacationLimit - data.vacation.size;
@@ -509,8 +513,9 @@ function handleDayClick(dayDiv, year, month, day){
         daysToMark.push(tempKey);
       }
     }
+    const holidays = getHolidaysForYear(year);
     daysToMark.forEach(k => {
-      if (holidays.national.has(k) || holidays.local.has(k)) return;
+      if (holidays.has(k)) return; // No marcar festivos
       if (usePrev && (carry - data.vacationPrev.size) > 0) {
         data.vacationPrev.add(k);
       } else if (!usePrev && (vacationLimit - data.vacation.size) > 0) {
@@ -518,6 +523,7 @@ function handleDayClick(dayDiv, year, month, day){
       }
     });
   }
+
   delete carryOver[year];
   saveData();
   createCalendar(year);
