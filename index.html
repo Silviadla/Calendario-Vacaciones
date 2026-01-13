@@ -98,7 +98,7 @@
   }
   .tooltip { 
     position: absolute; 
-    bottom: 100%; 
+    top: -50px; /* Más arriba para no tapar el día */
     left: 50%; 
     transform: translateX(-50%); 
     background: rgba(0,0,0,0.95); 
@@ -109,12 +109,17 @@
     white-space: nowrap; 
     opacity: 0; 
     pointer-events: none; 
-    transition: opacity 0.3s ease; 
-    z-index: 100; 
-    margin-bottom: 10px; 
+    transition: opacity 0.3s ease, transform 0.3s ease; 
+    z-index: 1000; 
     box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    min-width: 140px;
+    text-align: center;
   }
-  .day:hover .tooltip { opacity: 1; }
+  .day:hover .tooltip,
+  .day:active .tooltip {
+    opacity: 1;
+    transform: translateX(-50%) translateY(6px);
+  }
   .tooltip::after { 
     content: ''; 
     position: absolute; 
@@ -253,51 +258,6 @@ const syncText = document.getElementById("syncText");
 const dayNames = ["L","M","X","J","V","S","D"];
 const months = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 
-function loadData() {
-  if (!userId) return;
-  db.collection("calendarios").doc(userId).get().then((doc) => {
-    if (doc.exists) {
-      const data = doc.data();
-      yearData = convertToSets(data.yearData || {});
-      carryOver = data.carryOver || {};
-    }
-    createCalendar(currentYear);
-  });
-}
-
-function saveData() {
-  if (!userId) return;
-  db.collection("calendarios").doc(userId).set({
-    yearData: convertToArrays(yearData),
-    carryOver: carryOver,
-    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-  });
-}
-
-function convertToSets(data) {
-  const converted = {};
-  for (const y in data) {
-    converted[y] = {
-      vacation: new Set(data[y].vacation || []),
-      vacationPrev: new Set(data[y].vacationPrev || []),
-      medical: new Set(data[y].medical || [])
-    };
-  }
-  return converted;
-}
-
-function convertToArrays(data) {
-  const converted = {};
-  for (const y in data) {
-    converted[y] = {
-      vacation: Array.from(data[y].vacation),
-      vacationPrev: Array.from(data[y].vacationPrev),
-      medical: Array.from(data[y].medical)
-    };
-  }
-  return converted;
-}
-
 // === FUNCIÓN DE FESTIVOS CON NOMBRES ===
 function getEasterDate(year) {
   const a = year % 19;
@@ -363,6 +323,51 @@ function getHolidaysForYear(year) {
   add(sanFroilan, "San Froilán" + (sanFroilan.getDate() !== 5 ? " (trasladado)" : ""), "local");
 
   return holidays;
+}
+
+function loadData() {
+  if (!userId) return;
+  db.collection("calendarios").doc(userId).get().then((doc) => {
+    if (doc.exists) {
+      const data = doc.data();
+      yearData = convertToSets(data.yearData || {});
+      carryOver = data.carryOver || {};
+    }
+    createCalendar(currentYear);
+  });
+}
+
+function saveData() {
+  if (!userId) return;
+  db.collection("calendarios").doc(userId).set({
+    yearData: convertToArrays(yearData),
+    carryOver: carryOver,
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+}
+
+function convertToSets(data) {
+  const converted = {};
+  for (const y in data) {
+    converted[y] = {
+      vacation: new Set(data[y].vacation || []),
+      vacationPrev: new Set(data[y].vacationPrev || []),
+      medical: new Set(data[y].medical || [])
+    };
+  }
+  return converted;
+}
+
+function convertToArrays(data) {
+  const converted = {};
+  for (const y in data) {
+    converted[y] = {
+      vacation: Array.from(data[y].vacation),
+      vacationPrev: Array.from(data[y].vacationPrev),
+      medical: Array.from(data[y].medical)
+    };
+  }
+  return converted;
 }
 
 function calculateCarryOver(year) {
@@ -443,6 +448,32 @@ function createCalendar(year){
   }
   updateCounters();
 }
+
+// Soporte para tooltip en móvil (mantener presionado)
+document.addEventListener('touchstart', function(e) {
+  let target = e.target.closest('.day');
+  if (!target) return;
+
+  let tooltip = target.querySelector('.tooltip');
+  if (!tooltip) return;
+
+  let timeout = setTimeout(() => {
+    tooltip.style.opacity = '1';
+    tooltip.style.transform = 'translateX(-50%) translateY(6px)';
+  }, 400); // 0.4 segundos
+
+  let hide = () => {
+    clearTimeout(timeout);
+    if (tooltip) {
+      tooltip.style.opacity = '0';
+      tooltip.style.transform = 'translateX(-50%)';
+    }
+  };
+
+  target.addEventListener('touchend', hide, {once: true});
+  target.addEventListener('touchcancel', hide, {once: true});
+  target.addEventListener('touchmove', hide, {once: true});
+}, {passive: true});
 
 function handleDayClick(dayDiv, year, month, day){
   const dateKey = `${year}-${month+1}-${day}`;
