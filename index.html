@@ -17,14 +17,14 @@
 <style>
   :root {
     --bg: #f0f4f8; --card-bg: #ffffff; --text: #2d3748; --border: #e2e8f0;
-    --primary: #4c6ef5; --vacation: #22c55e; --vacation-prev: #22c55e;
+    --primary: #4c6ef5; --vacation: #22c55e; --vacation-prev: #0ea5e9;
     --medical: #3b82f6; --holiday-national: #ef4444; --holiday-local: #a855f7;
     --weekend: #dbeafe; --shadow: 0 6px 16px rgba(0,0,0,0.08);
   }
   @media (prefers-color-scheme: dark) {
     :root {
       --bg: #1a202c; --card-bg: #2d3748; --text: #e2e8f0; --border: #4a5568;
-      --vacation: #4ade80; --vacation-prev: #4ade80; --medical: #60a5fa;
+      --vacation: #4ade80; --vacation-prev: #38bdf8; --medical: #60a5fa;
       --holiday-national: #f87171; --holiday-local: #c084fc; --weekend: #6366f1;
       --shadow: 0 6px 16px rgba(0,0,0,0.3);
     }
@@ -70,8 +70,11 @@
   .days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; font-size: 0.9rem; }
   .day { height: 46px; display: flex; align-items: center; justify-content: center; border-radius: 14px; cursor: pointer; transition: all 0.3s; font-weight: 500; border: 1px solid transparent; position: relative; overflow: hidden; }
   .day:hover { transform: scale(1.08); box-shadow: 0 6px 16px rgba(0,0,0,0.12); }
-  .vacation { background: var(--vacation); color: white; }
-  .vacation-prev { background: var(--vacation-prev); color: white; }
+.vacation,
+.vacation-prev {
+  background: var(--vacation);
+  color: white;
+}
   .medical { background: var(--medical); color: white; }
   .holiday-national { background: var(--holiday-national); color: white; }
   .holiday-local { background: var(--holiday-local); color: white; }
@@ -356,24 +359,41 @@ function handleDayClick(dayDiv, year, month, day){
   const dateKey = `${year}-${month+1}-${day}`;
   const data = yearData[year];
   const holidays = getHolidaySets(year);
-  
+
   // Limpiar marcas previas
-  data.vacation.delete(dateKey); data.vacationPrev.delete(dateKey); data.medical.delete(dateKey);
-  
-  const type = prompt("¿Qué quieres marcar? (v = vacaciones, m = médico, c = borrar)").toLowerCase();
-  if (type === "m") {
+  data.vacation.delete(dateKey);
+  data.vacationPrev.delete(dateKey);
+  data.medical.delete(dateKey);
+
+  const type = prompt("¿Qué quieres marcar? (v = vacaciones, m = médico, c = borrar)");
+  if (!type) return;
+
+  if (type.toLowerCase() === "m") {
     data.medical.add(dateKey);
-  } else if (type === "v") {
+  }
+
+  if (type.toLowerCase() === "v") {
+
     const carry = calculateCarryOver(year - 1);
     const remainingCarry = carry - data.vacationPrev.size;
-    let usePrev = (remainingCarry > 0) && confirm(`Usar día de año anterior? (Quedan ${remainingCarry})`);
-    
+    const remainingCurrent = vacationLimit - data.vacation.size;
+
+    if (remainingCarry <= 0 && remainingCurrent <= 0) {
+      alert("❌ No te quedan días disponibles.");
+      return;
+    }
+
+    let usePrev = false;
+    if (remainingCarry > 0) {
+      usePrev = confirm(`¿Usar día del año anterior? (Quedan ${remainingCarry})`);
+    }
+
     const dow = new Date(year, month, day).getDay();
     let markWeek = (dow >= 1 && dow <= 5) && confirm("¿Marcar hasta el viernes?");
-    
+
     let daysToMark = [dateKey];
-    if(markWeek) {
-      for(let i=dow+1; i<=5; i++) {
+    if (markWeek) {
+      for (let i = dow + 1; i <= 5; i++) {
         let tempDate = new Date(year, month, day + (i - dow));
         let tempKey = `${year}-${tempDate.getMonth()+1}-${tempDate.getDate()}`;
         daysToMark.push(tempKey);
@@ -381,16 +401,16 @@ function handleDayClick(dayDiv, year, month, day){
     }
 
     daysToMark.forEach(k => {
-      // SOLO marcar si NO es festivo nacional ni local
-      if (!holidays.national.has(k) && !holidays.local.has(k)) {
-        if(usePrev && (calculateCarryOver(year-1) - data.vacationPrev.size) > 0) {
-          data.vacationPrev.add(k);
-        } else {
-          data.vacation.add(k);
-        }
+      if (holidays.national.has(k) || holidays.local.has(k)) return;
+
+      if (usePrev && (carry - data.vacationPrev.size) > 0) {
+        data.vacationPrev.add(k);
+      } else if (!usePrev && (vacationLimit - data.vacation.size) > 0) {
+        data.vacation.add(k);
       }
     });
   }
+
   delete carryOver[year];
   saveData();
   createCalendar(year);
