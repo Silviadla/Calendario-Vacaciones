@@ -1004,26 +1004,6 @@
             }
             });
 
-            // Mensajes más claros con modal
-            if (successCount === 0 && attemptedCount > 0) {
-            if (usePrev) {
-            showErrorModal(
-            "Límite alcanzado 😔",
-            "No se pudieron marcar días.\nYa has usado todos los días pendientes del año anterior."
-            );
-            } else {
-            showErrorModal(
-            "Límite alcanzado 😔",
-            "No se pudieron marcar días.\nYa has usado todos los días de vacaciones de este año."
-            );
-            }
-            } 
-            else if (successCount < attemptedCount) {
-            showErrorModal(
-            "Aviso",
-            `Solo se pudieron marcar ${successCount} de ${attemptedCount} días solicitados.\nSe alcanzó el límite disponible.`
-            );
-            }
 
             delete carryOver[year];
             saveData();
