@@ -509,7 +509,18 @@
                         😔 No te quedan más días de vacaciones disponibles<br>
                         <small>(ni del año actual ni del anterior)</small>
                     </div>
+                    <!-- MODAL DE AVISO / ERROR AL MARCAR DÍAS -->
+                    <div id="errorModal" class="modal" style="display:none;">
+                        <div class="modal-content">
+                            <h3 id="errorModalTitle" style="margin:0 0 1rem 0; color:#ef4444;">¡Atención! ⚠️</h3>
 
+                            <p id="errorModalMessage" style="margin:1.2rem 0; font-size:1.05rem; line-height:1.4;"></p>
+
+                            <button id="btnCloseError" class="modal-btn cancel" style="margin-top:1rem; width:60%; margin-left:auto; margin-right:auto;">
+                                Entendido
+                            </button>
+                        </div>
+                    </div>
                     <!-- Eliminar siempre visible, pero con más espacio cuando no hay opciones de vacaciones -->
                     <button id="btnDelete" class="modal-btn delete" style="margin-top: 0.8rem;">🗑️ Eliminar marca</button>
                     <button id="btnCancelModal" class="modal-btn cancel" style="margin-top:1.3rem;">✖️ Cancelar</button>
@@ -923,7 +934,7 @@
             const data = yearData[year];
             const holidays = getHolidaysForYear(year);
 
-            // Limpiamos primero...
+            // Limpiamos primero cualquier marca anterior en ese día
             dayDiv.classList.remove("vacation", "vacation-prev");
             const badge = dayDiv.querySelector(".badge-an");
             if (badge) badge.remove();
@@ -964,22 +975,41 @@
             }
             });
 
-            // Mensajes más claros según resultado
+            // Mensajes más claros con modal
             if (successCount === 0 && attemptedCount > 0) {
             if (usePrev) {
-            alert("No se pudieron marcar días 😔\nYa has usado todos los días pendientes del año anterior.");
+            showErrorModal(
+            "Límite alcanzado 😔",
+            "No se pudieron marcar días.\nYa has usado todos los días pendientes del año anterior."
+            );
             } else {
-            alert("No se pudieron marcar días 😔\nYa has usado todos los días de vacaciones de este año.");
+            showErrorModal(
+            "Límite alcanzado 😔",
+            "No se pudieron marcar días.\nYa has usado todos los días de vacaciones de este año."
+            );
             }
-            } else if (successCount < attemptedCount) {
-            alert(`Solo se pudieron marcar ${successCount} de ${attemptedCount} días solicitados.\nSe alcanzó el límite disponible.`);
+            } 
+            else if (successCount < attemptedCount) {
+            showErrorModal(
+            "Aviso",
+            `Solo se pudieron marcar ${successCount} de ${attemptedCount} días solicitados.\nSe alcanzó el límite disponible.`
+            );
             }
 
             delete carryOver[year];
             saveData();
             createCalendar(year);
             }
+            function showErrorModal(title, message) {
+            document.getElementById("errorModalTitle").textContent = title;
+            document.getElementById("errorModalMessage").textContent = message;
+            document.getElementById("errorModal").style.display = "flex";
+            }
 
+            // Cerrar el modal de error
+            document.getElementById("btnCloseError").onclick = () => {
+            document.getElementById("errorModal").style.display = "none";
+            };
             function updateCounters(){
             const data = yearData[currentYear] || {vacation:new Set(), vacationPrev:new Set(), medical:new Set()};
             const carry = calculateCarryOver(currentYear - 1);
