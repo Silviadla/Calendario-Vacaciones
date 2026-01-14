@@ -22,7 +22,6 @@
                 --primary: #4c6ef5;
                 --vacation: #22c55e;
                 --vacation-prev: #0ea5e9;
-                --medical: #3b82f6;
                 --holiday-national: #ef4444;
                 --holiday-local: #a855f7;
                 --weekend: #dbeafe;
@@ -36,7 +35,7 @@
                     --border: #4a5568;
                     --vacation: #4ade80;
                     --vacation-prev: #38bdf8;
-                    --medical: #60a5fa;
+
                     --holiday-national: #f87171;
                     --holiday-local: #c084fc;
                     --weekend: #6366f1;
@@ -277,10 +276,7 @@
                 background: var(--vacation);
                 color: white;
             }
-            .medical {
-                background: var(--medical);
-                color: white;
-            }
+
             .holiday-national {
                 background: var(--holiday-national);
                 color: white;
@@ -487,7 +483,7 @@
             <div class="counters">
                 <div class="counter-box"><div>Días usados (año actual)</div><strong id="vacationCount">0</strong></div>
                 <div class="counter-box"><div>Días año anterior usados</div><strong id="vacationPrevCount">0</strong></div>
-                <div class="counter-box"><div>Días médicos</div><strong id="medicalCount">0</strong></div>
+
                 <div class="counter-box"><div>Días totales disponibles</div><strong id="remaining" class="big-remaining">23</strong></div>
             </div>
             <button id="resetYear">Borrar todas las marcas de este año</button>
@@ -546,7 +542,7 @@
             <div class="labels">
                 <span><span class="dot" style="background:var(--vacation);"></span> Vacaciones año actual</span>
                 <span><span class="dot" style="background:var(--vacation-prev);"></span> Vacaciones año anterior (AN)</span>
-                <span><span class="dot" style="background:var(--medical);"></span> Médico</span>
+
                 <span><span class="dot" style="background:var(--holiday-national);"></span> Festivo Nacional</span>
                 <span><span class="dot" style="background:var(--holiday-local);"></span> Festivo León</span>
             </div>
@@ -618,7 +614,7 @@
             let carryOver = {};
             const vacationCount = document.getElementById("vacationCount");
             const vacationPrevCount = document.getElementById("vacationPrevCount");
-            const medicalCount = document.getElementById("medicalCount");
+
             const remaining = document.getElementById("remaining");
             const yearInput = document.getElementById("yearInput");
             const calendar = document.getElementById("calendar");
@@ -720,7 +716,7 @@
             converted[y] = {
             vacation: new Set(data[y].vacation || []),
             vacationPrev: new Set(data[y].vacationPrev || []),
-            medical: new Set(data[y].medical || [])
+
             };
             }
             return converted;
@@ -732,7 +728,7 @@
             converted[y] = {
             vacation: Array.from(data[y].vacation),
             vacationPrev: Array.from(data[y].vacationPrev),
-            medical: Array.from(data[y].medical)
+
             };
             }
             return converted;
@@ -760,7 +756,7 @@
 
             const holidays = getHolidaysForYear(year);
 
-            if (!yearData[year]) yearData[year] = { vacation: new Set(), vacationPrev: new Set(), medical: new Set() };
+            if (!yearData[year]) yearData[year] = { vacation: new Set(), vacationPrev: new Set()};
             calendar.innerHTML = "";
             for(let m = 0; m < 12; m++){
             const totalDays = new Date(year, m+1, 0).getDate();
@@ -801,7 +797,7 @@
             }
 
             if (yearData[year].vacation.has(dateKey)) dayDiv.classList.add("vacation");
-            if (yearData[year].medical.has(dateKey)) dayDiv.classList.add("medical");
+
             if (yearData[year].vacationPrev.has(dateKey)) {
             dayDiv.classList.add("vacation-prev");
             dayDiv.innerHTML += `<div class="badge-an">AN</div>`;
@@ -886,13 +882,13 @@
             const { dateKey, year, dayDiv } = selectedDateInfo;
             const data = yearData[year];
 
-            dayDiv.classList.remove("vacation", "vacation-prev", "medical");
+            dayDiv.classList.remove("vacation", "vacation-prev");
             const badge = dayDiv.querySelector(".badge-an");
             if (badge) badge.remove();
 
             data.vacation.delete(dateKey);
             data.vacationPrev.delete(dateKey);
-            data.medical.delete(dateKey); // por si acaso
+
 
             document.getElementById("dayModal").style.display = "none";
             saveData();
@@ -1011,11 +1007,11 @@
             document.getElementById("errorModal").style.display = "none";
             };
             function updateCounters(){
-            const data = yearData[currentYear] || {vacation:new Set(), vacationPrev:new Set(), medical:new Set()};
+            const data = yearData[currentYear] || {vacation:new Set(), vacationPrev:new Set()};
             const carry = calculateCarryOver(currentYear - 1);
             vacationCount.textContent = data.vacation.size;
             vacationPrevCount.textContent = `${data.vacationPrev.size} (de ${carry})`;
-            medicalCount.textContent = data.medical.size;
+
             remaining.textContent = (vacationLimit + carry) - (data.vacation.size + data.vacationPrev.size);
             }
 
@@ -1024,7 +1020,7 @@
             document.getElementById("yearInput").onchange = (e) => createCalendar(parseInt(e.target.value));
             document.getElementById("resetYear").onclick = () => {
             if(confirm("Borrar todo el año?")) {
-            yearData[currentYear] = { vacation: new Set(), vacationPrev: new Set(), medical: new Set() };
+            yearData[currentYear] = { vacation: new Set(), vacationPrev: new Set()};
             saveData(); createCalendar(currentYear);
             }
             };
