@@ -450,6 +450,28 @@
                 background: #6b7280;
                 color: white;
             }
+
+            .remaining-highlight {
+                grid-column: 1 / -1;              /* Ocupa toda la fila */
+                color: black;
+                padding: 1.6rem 1rem;
+                border-radius: 16px;
+                text-align: center;
+                box-shadow: 0 6px 20px rgba(76, 110, 245, 0.3); /* Sombra suave */
+            }
+
+            .remaining-highlight div {
+                font-size: 1.05rem;
+                font-weight: 500;
+                margin-bottom: 0.6rem;
+                opacity: 0.95;
+            }
+
+            .remaining-highlight .big-remaining {
+                font-size: 3.8rem !important;     /* Número MUY grande */
+                font-weight: 900;
+                line-height: 1;
+            }
         </style>
     </head>
     <body>
@@ -481,10 +503,21 @@
                 <button id="nextYear">Año siguiente »</button>
             </div>
             <div class="counters">
-                <div class="counter-box"><div>Días usados (año actual)</div><strong id="vacationCount">0</strong></div>
-                <div class="counter-box"><div>Días año anterior usados</div><strong id="vacationPrevCount">0</strong></div>
+                <div class="counter-box">
+                    <div>Días usados (año actual)</div>
+                    <strong id="vacationCount">0</strong>
+                </div>
 
-                <div class="counter-box"><div>Días totales disponibles</div><strong id="remaining" class="big-remaining">23</strong></div>
+                <div class="counter-box">
+                    <div>Días año anterior usados</div>
+                    <strong id="vacationPrevCount">0</strong>
+                </div>
+
+                <!-- Contador principal centrado y destacado -->
+                <div class="counter-box remaining-highlight">
+                    <div>Días totales disponibles</div>
+                    <strong id="remaining" class="big-remaining">23</strong>
+                </div>
             </div>
             <button id="resetYear">Borrar todas las marcas de este año</button>
 
