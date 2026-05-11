@@ -35,7 +35,6 @@
                     --border: #4a5568;
                     --vacation: #4ade80;
                     --vacation-prev: #38bdf8;
-
                     --holiday-national: #f87171;
                     --holiday-local: #c084fc;
                     --weekend: #6366f1;
@@ -170,6 +169,12 @@
                 font-size: 1.1rem;
                 font-weight: 500;
             }
+            .button-group {
+                display: flex;
+                gap: 1rem;
+                justify-content: center;
+                margin: 1rem 0;
+            }
             .counters {
                 display: grid;
                 grid-template-columns: repeat(2, 1fr);
@@ -198,9 +203,9 @@
                 font-size: 2rem !important;
                 color: var(--primary);
             }
-            #resetYear {
+            .btn-reset {
                 display: block;
-                margin: 1.8rem auto;
+                margin: 1rem auto;
                 padding: 0.8rem 1.8rem;
                 background: #e53e3e;
                 color: white;
@@ -209,6 +214,9 @@
                 cursor: pointer;
                 font-weight: 600;
                 box-shadow: var(--shadow);
+            }
+            .btn-delete-notes {
+                background: #8b5cf6;
             }
             .labels {
                 display: flex;
@@ -276,7 +284,6 @@
                 background: var(--vacation);
                 color: white;
             }
-
             .holiday-national {
                 background: var(--holiday-national);
                 color: white;
@@ -363,9 +370,9 @@
                 .big-remaining {
                     font-size: 1.8rem;
                 }
-                #resetYear {
+                .btn-reset {
                     padding: 0.7rem 1.5rem;
-                    margin: 1.5rem auto;
+                    margin: 1rem auto;
                 }
                 .labels {
                     gap: 0.8rem;
@@ -385,8 +392,11 @@
                 .day {
                     height: 40px;
                 }
+                .button-group {
+                    flex-direction: column;
+                    gap: 0.5rem;
+                }
             }
-
             .modal {
                 position: fixed;
                 inset: 0;
@@ -397,7 +407,6 @@
                 z-index: 2000;
                 backdrop-filter: blur(4px);
             }
-
             .modal-content {
                 background: var(--card-bg);
                 padding: 2rem;
@@ -408,7 +417,6 @@
                 text-align: center;
                 border: 1px solid var(--border);
             }
-
             .modal-btn {
                 width: 100%;
                 padding: 14px;
@@ -420,57 +428,102 @@
                 cursor: pointer;
                 transition: all 0.2s;
             }
-
             .modal-btn:hover {
                 transform: translateY(-2px);
                 box-shadow: 0 8px 20px rgba(0,0,0,0.2);
             }
-
-            .modal-btn.vacation       {
+            .modal-btn.vacation {
                 background: var(--vacation);
                 color: white;
             }
-            .modal-btn.vacation-prev  {
+            .modal-btn.vacation-prev {
                 background: var(--vacation-prev);
                 color: white;
             }
-            .modal-btn.delete         {
+            .modal-btn.delete {
                 background: #ef4444;
                 color: white;
             }
-            .modal-btn.cancel         {
+            .modal-btn.delete-note {
+                background: #f59e0b;
+                color: white;
+            }
+            .modal-btn.cancel {
                 background: var(--border);
                 color: var(--text);
             }
-            .modal-btn.yes            {
+            .modal-btn.yes {
                 background: var(--vacation);
                 color: white;
             }
-            .modal-btn.no             {
+            .modal-btn.no {
                 background: #6b7280;
                 color: white;
             }
-
             .remaining-highlight {
-                grid-column: 1 / -1;              /* Ocupa toda la fila */
+                grid-column: 1 / -1;
                 color: black;
                 padding: 1.6rem 1rem;
                 border-radius: 16px;
                 text-align: center;
-                box-shadow: 0 6px 20px rgba(76, 110, 245, 0.3); /* Sombra suave */
+                box-shadow: 0 6px 20px rgba(76, 110, 245, 0.3);
             }
-
             .remaining-highlight div {
                 font-size: 1.05rem;
                 font-weight: 500;
                 margin-bottom: 0.6rem;
                 opacity: 0.95;
             }
-
             .remaining-highlight .big-remaining {
-                font-size: 3.8rem !important;     /* Número MUY grande */
+                font-size: 3.8rem !important;
                 font-weight: 900;
                 line-height: 1;
+            }
+            .badge-note {
+                position: absolute;
+                top: 4px;
+                left: 4px;
+                background: #8b5cf6;
+                color: white;
+                font-size: 0.68rem;
+                font-weight: bold;
+                padding: 2px 5px;
+                border-radius: 6px;
+                pointer-events: none;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            }
+            .note-tooltip {
+                position: absolute;
+                top: -52px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: rgba(0,0,0,0.95);
+                color: white;
+                padding: 9px 14px;
+                border-radius: 8px;
+                font-size: 0.87rem;
+                white-space: nowrap;
+                opacity: 0;
+                pointer-events: none;
+                transition: all 0.3s ease;
+                z-index: 1000;
+                max-width: 220px;
+                text-align: center;
+                line-height: 1.3;
+            }
+            .day:hover .note-tooltip,
+            .day:active .note-tooltip {
+                opacity: 1;
+                transform: translateX(-50%) translateY(8px);
+            }
+            .note-tooltip::after {
+                content: '';
+                position: absolute;
+                top: 100%;
+                left: 50%;
+                transform: translateX(-50%);
+                border: 7px solid transparent;
+                border-top-color: rgba(0,0,0,0.95);
             }
         </style>
     </head>
@@ -507,64 +560,62 @@
                     <div>Días usados (año actual)</div>
                     <strong id="vacationCount">0</strong>
                 </div>
-
                 <div class="counter-box">
                     <div>Días año anterior usados</div>
                     <strong id="vacationPrevCount">0</strong>
                 </div>
-
-                <!-- Contador principal centrado y destacado -->
                 <div class="counter-box remaining-highlight">
                     <div>Días totales disponibles</div>
                     <strong id="remaining" class="big-remaining">23</strong>
                 </div>
             </div>
-            <button id="resetYear">Borrar todas las marcas de este año</button>
+            <div class="button-group">
+                <button id="resetYear" class="btn-reset">🗑️ Borrar vacaciones del año</button>
+                <button id="deleteAllNotes" class="btn-reset btn-delete-notes">📝 Borrar todas las notas</button>
+            </div>
 
-            <!-- MODAL DE SELECCIÓN DE TIPO DE DÍA -->
+            <!-- MODAL PRINCIPAL -->
             <div id="dayModal" class="modal" style="display:none;">
                 <div class="modal-content">
-                    <h3 style="margin:0 0 1.2rem 0; color:var(--primary);">Marcar día 📅</h3>
+                    <h3 style="margin:0 0 1.4rem 0; color:var(--primary);">¿Qué quieres hacer en este día?</h3>
 
-                    <!-- Opciones de vacaciones (se ocultan cuando no quedan días) -->
                     <div id="vacationOptions">
                         <button id="btnVacCurrent" class="modal-btn vacation">🌴 Vacaciones año actual</button>
                         <button id="btnVacPrev" class="modal-btn vacation-prev">🔙 Vacaciones año anterior (AN)</button>
                     </div>
 
-                    <!-- Mensaje cuando no quedan días -->
-                    <div id="noMoreDaysMessage" style="display:none; margin: 1.5rem 0; padding: 1.2rem;
-                         background: #fef3f2; color: #991b1b; border-radius: 12px; font-weight: 500; line-height: 1.4;">
-                        😔 No te quedan más días de vacaciones disponibles<br>
-                        <small>(ni del año actual ni del anterior)</small>
+                    <div id="noMoreDaysMessage" style="display:none; margin: 1.5rem 0; padding: 1.2rem; background: #fef3f2; color: #991b1b; border-radius: 12px; font-weight: 500; line-height: 1.4;">
+                        😔 No te quedan más días de vacaciones disponibles
                     </div>
-                    <!-- MODAL DE AVISO / ERROR AL MARCAR DÍAS -->
-                    <div id="errorModal" class="modal" style="display:none;">
-                        <div class="modal-content">
-                            <h3 id="errorModalTitle" style="margin:0 0 1rem 0; color:#ef4444;">¡Atención! ⚠️</h3>
 
-                            <p id="errorModalMessage" style="margin:1.2rem 0; font-size:1.05rem; line-height:1.4;"></p>
-
-                            <button id="btnCloseError" class="modal-btn cancel" style="margin-top:1rem; width:60%; margin-left:auto; margin-right:auto;">
-                                Entendido
-                            </button>
+                    <!-- SECCIÓN DE NOTAS CON BOTONES PARA GUARDAR Y ELIMINAR -->
+                    <div style="margin: 1.6rem 0; padding: 16px; background: #f8fafc; border-radius: 14px; border: 1px solid var(--border);">
+                        <div style="font-weight: 600; margin-bottom: 10px; color: var(--primary);">📝 Nota personal</div>
+                        <input type="text" id="noteInput" placeholder="Escribe una nota (ej: Dentista, Cumpleaños...)" 
+                               style="width:100%; padding:12px; border-radius:10px; border:1px solid var(--border); font-size:1rem; margin-bottom:8px;">
+                        <div style="display: flex; gap: 8px; margin-top: 5px;">
+                            <button id="btnSaveNote" class="modal-btn" style="background:#8b5cf6; color:white; flex:1;">💾 Guardar Nota</button>
+                            <button id="btnDeleteNote" class="modal-btn delete-note" style="flex:1;">🗑️ Eliminar Nota</button>
                         </div>
                     </div>
-                    <!-- Eliminar siempre visible, pero con más espacio cuando no hay opciones de vacaciones -->
-                    <button id="btnDelete" class="modal-btn delete" style="margin-top: 0.8rem;">🗑️ Eliminar marca</button>
-                    <button id="btnCancelModal" class="modal-btn cancel" style="margin-top:1.3rem;">✖️ Cancelar</button>
+
+                    <button id="btnDelete" class="modal-btn delete" style="margin-top: 8px; background:#ef4444; opacity:0.85;">🗑️ Eliminar marca de vacaciones</button>
+                    <button id="btnCancelModal" class="modal-btn cancel" style="margin-top: 12px;">Cerrar</button>
                 </div>
             </div>
 
-            <!-- MODAL CONFIRMAR SEMANA -->
+            <div id="errorModal" class="modal" style="display:none;">
+                <div class="modal-content">
+                    <h3 id="errorModalTitle" style="margin:0 0 1rem 0; color:#ef4444;">¡Atención! ⚠️</h3>
+                    <p id="errorModalMessage" style="margin:1.2rem 0; font-size:1.05rem; line-height:1.4;"></p>
+                    <button id="btnCloseError" class="modal-btn cancel" style="margin-top:1rem; width:60%; margin-left:auto; margin-right:auto;">Entendido</button>
+                </div>
+            </div>
+
             <div id="weekModal" class="modal" style="display:none;">
                 <div class="modal-content">
                     <h3 style="margin:0 0 1rem 0;">¿Marcar toda la semana? 📆 </h3>
-                    <p style="margin-bottom:1.5rem; opacity:0.9;">
-                        Se marcarán los días laborables restantes de la semana<br>
-                        (sin contar festivos)🚀
-                    </p>
-
+                    <p style="margin-bottom:1.5rem; opacity:0.9;">Se marcarán los días laborables restantes de la semana<br>(sin contar festivos)🚀</p>
                     <div style="display:flex; gap:1rem; justify-content:center;">
                         <button id="btnWeekYes" class="modal-btn yes"> ✅ Sí, marcar semana</button>
                         <button id="btnWeekNo" class="modal-btn no">Solo este día 🔴 </button>
@@ -575,7 +626,6 @@
             <div class="labels">
                 <span><span class="dot" style="background:var(--vacation);"></span> Vacaciones año actual</span>
                 <span><span class="dot" style="background:var(--vacation-prev);"></span> Vacaciones año anterior (AN)</span>
-
                 <span><span class="dot" style="background:var(--holiday-national);"></span> Festivo Nacional</span>
                 <span><span class="dot" style="background:var(--holiday-local);"></span> Festivo León</span>
             </div>
@@ -591,29 +641,22 @@
             messagingSenderId: "472325131890",
             appId: "1:472325131890:web:03daa8176ac7ac5fddbceb"
             };
+
             firebase.initializeApp(firebaseConfig);
             const db = firebase.firestore();
             let userId = null;
 
-            firebase.auth().onAuthStateChanged((user) => {
-            if (user) {
-            userId = user.uid;
-            document.getElementById('userTag').textContent = user.email || "Invitado";
-            document.getElementById('authSection').style.display = 'none';
-            document.getElementById('calendarSection').style.display = 'block';
-            loadData();
-            } else {
-            userId = null;
-            document.getElementById('authSection').style.display = 'block';
-            document.getElementById('calendarSection').style.display = 'none';
-            }
-            });
-
+            // Funciones de autenticación
             function togglePassword() {
             const passInput = document.getElementById('pass');
             const eyeIcon = document.getElementById('eyeIcon');
-            passInput.type = passInput.type === 'password' ? 'text' : 'password';
-            eyeIcon.style.color = passInput.type === 'text' ? 'var(--primary)' : 'currentColor';
+            if (passInput.type === 'password') {
+            passInput.type = 'text';
+            eyeIcon.style.color = 'var(--primary)';
+            } else {
+            passInput.type = 'password';
+            eyeIcon.style.color = 'currentColor';
+            }
             }
 
             function loginEmail() {
@@ -637,25 +680,36 @@
             firebase.auth().sendPasswordResetEmail(email).then(() => alert("✅ Correo enviado.")).catch(e => alert("❌ Error: " + e.message));
             }
 
-            function loginAnonimo() { firebase.auth().signInAnonymously(); }
+            function loginAnonimo() { 
+            firebase.auth().signInAnonymously(); 
+            }
 
-            function logout() { firebase.auth().signOut(); }
+            function logout() { 
+            firebase.auth().signOut(); 
+            }
 
+            firebase.auth().onAuthStateChanged((user) => {
+            if (user) {
+            userId = user.uid;
+            document.getElementById('userTag').textContent = user.email || "Invitado";
+            document.getElementById('authSection').style.display = 'none';
+            document.getElementById('calendarSection').style.display = 'block';
+            loadData();
+            } else {
+            userId = null;
+            document.getElementById('authSection').style.display = 'block';
+            document.getElementById('calendarSection').style.display = 'none';
+            }
+            });
+
+            // Variables globales
             let currentYear = 2026;
             const vacationLimit = 23;
             let yearData = {};
             let carryOver = {};
-            const vacationCount = document.getElementById("vacationCount");
-            const vacationPrevCount = document.getElementById("vacationPrevCount");
+            let selectedDateInfo = null;
 
-            const remaining = document.getElementById("remaining");
-            const yearInput = document.getElementById("yearInput");
-            const calendar = document.getElementById("calendar");
-            const syncText = document.getElementById("syncText");
-            const dayNames = ["L","M","X","J","V","S","D"];
-            const months = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
-
-            // === FUNCIÓN DE FESTIVOS CON NOMBRES ===
+            // Funciones de festivos
             function getEasterDate(year) {
             const a = year % 19;
             const b = Math.floor(year / 100);
@@ -686,8 +740,6 @@
             const key = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
             holidays.set(key, { name, type });
             }
-
-            // Festivos fijos nacionales
             const fixed = [
             [1, 1, "Año Nuevo"],
             [1, 6, "Reyes Magos"],
@@ -704,22 +756,42 @@
             date = moveToMondayIfSunday(date);
             add(date, name + (date.getDate() !== d ? " (trasladado)" : ""));
             });
-
-            // Semana Santa
             const easter = getEasterDate(year);
             const juevesSanto = new Date(easter); juevesSanto.setDate(easter.getDate() - 3);
             const viernesSanto = new Date(easter); viernesSanto.setDate(easter.getDate() - 2);
             add(juevesSanto, "Jueves Santo");
             add(viernesSanto, "Viernes Santo");
-
-            // Festivos de León / Castilla y León
             add(new Date(year, 3, 23), "Día de Castilla y León", "local");
             add(new Date(year, 5, 24), "San Juan", "local");
             let sanFroilan = new Date(year, 9, 5);
             sanFroilan = moveToMondayIfSunday(sanFroilan);
             add(sanFroilan, "San Froilán" + (sanFroilan.getDate() !== 5 ? " (trasladado)" : ""), "local");
-
             return holidays;
+            }
+
+            // Funciones de datos
+            function convertToSets(data) {
+            const converted = {};
+            for (const y in data) {
+            converted[y] = {
+            vacation: new Set(data[y].vacation || []),
+            vacationPrev: new Set(data[y].vacationPrev || []),
+            notes: data[y].notes || {}
+            };
+            }
+            return converted;
+            }
+
+            function convertToArrays(data) {
+            const converted = {};
+            for (const y in data) {
+            converted[y] = {
+            vacation: Array.from(data[y].vacation),
+            vacationPrev: Array.from(data[y].vacationPrev),
+            notes: data[y].notes || {}
+            };
+            }
+            return converted;
             }
 
             function loadData() {
@@ -743,30 +815,6 @@
             });
             }
 
-            function convertToSets(data) {
-            const converted = {};
-            for (const y in data) {
-            converted[y] = {
-            vacation: new Set(data[y].vacation || []),
-            vacationPrev: new Set(data[y].vacationPrev || []),
-
-            };
-            }
-            return converted;
-            }
-
-            function convertToArrays(data) {
-            const converted = {};
-            for (const y in data) {
-            converted[y] = {
-            vacation: Array.from(data[y].vacation),
-            vacationPrev: Array.from(data[y].vacationPrev),
-
-            };
-            }
-            return converted;
-            }
-
             function calculateCarryOver(year) {
             if (carryOver[year] !== undefined) return carryOver[year];
             if (!yearData[year]) return 0;
@@ -782,16 +830,28 @@
             for (let y = 2025; y <= prevYear; y++) calculateCarryOver(y);
             }
 
-            function createCalendar(year){
+            function updateCounters() {
+            const data = yearData[currentYear] || { vacation: new Set(), vacationPrev: new Set() };
+            const carry = calculateCarryOver(currentYear - 1);
+            document.getElementById("vacationCount").textContent = data.vacation.size;
+            document.getElementById("vacationPrevCount").textContent = `${data.vacationPrev.size} (de ${carry})`;
+            document.getElementById("remaining").textContent = (vacationLimit + carry) - (data.vacation.size + data.vacationPrev.size);
+            }
+
+            function createCalendar(year) {
             currentYear = year;
-            yearInput.value = year;
+            document.getElementById("yearInput").value = year;
             ensureCarryOverUpTo(year - 1);
-
             const holidays = getHolidaysForYear(year);
-
-            if (!yearData[year]) yearData[year] = { vacation: new Set(), vacationPrev: new Set()};
-            calendar.innerHTML = "";
-            for(let m = 0; m < 12; m++){
+            if (!yearData[year]) {
+            yearData[year] = { vacation: new Set(), vacationPrev: new Set(), notes: {} };
+            }
+            if (!yearData[year].notes) yearData[year].notes = {};
+            const calendarDiv = document.getElementById("calendar");
+            calendarDiv.innerHTML = "";
+            const months = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+            const dayNames = ["L","M","X","J","V","S","D"];
+            for(let m = 0; m < 12; m++) {
             const totalDays = new Date(year, m+1, 0).getDate();
             const monthDiv = document.createElement("div");
             monthDiv.className = "month";
@@ -800,25 +860,25 @@
             daysDiv.className = "days";
             dayNames.forEach(d => {
             const label = document.createElement("div");
-            label.className = "day"; label.style.fontWeight = "bold"; label.textContent = d;
+            label.className = "day"; 
+            label.style.fontWeight = "bold"; 
+            label.textContent = d;
             daysDiv.appendChild(label);
             });
             const startDay = (new Date(year, m, 1).getDay() + 6) % 7;
             for(let i = 0; i < startDay; i++) daysDiv.appendChild(document.createElement("div"));
-            for(let d = 1; d <= totalDays; d++){
+            for(let d = 1; d <= totalDays; d++) {
             const dateKey = `${year}-${m+1}-${d}`;
             const dayDiv = document.createElement("div");
             dayDiv.className = "day";
             dayDiv.dataset.date = dateKey;
             dayDiv.innerHTML = `<span>${d}</span>`;
             const dayOfWeek = new Date(year, m, d).getDay();
-            if (dateKey === `${new Date().getFullYear()}-${new Date().getMonth()+1}-${new Date().getDate()}`) dayDiv.classList.add("today");
-
+            const today = new Date();
+            if (dateKey === `${today.getFullYear()}-${today.getMonth()+1}-${today.getDate()}`) dayDiv.classList.add("today");
             const holiday = holidays.get(dateKey);
             if (holiday) {
-            dayDiv.classList.add(
-            holiday.type === "national" ? "holiday-national" : "holiday-local"
-            );
+            dayDiv.classList.add(holiday.type === "national" ? "holiday-national" : "holiday-local");
             const tooltip = document.createElement("div");
             tooltip.className = "tooltip";
             tooltip.textContent = holiday.name;
@@ -828,83 +888,120 @@
             } else {
             dayDiv.onclick = () => handleDayClick(dayDiv, year, m, d);
             }
-
             if (yearData[year].vacation.has(dateKey)) dayDiv.classList.add("vacation");
-
             if (yearData[year].vacationPrev.has(dateKey)) {
             dayDiv.classList.add("vacation-prev");
             dayDiv.innerHTML += `<div class="badge-an">AN</div>`;
             }
+            const note = yearData[year]?.notes?.[dateKey];
+            if (note) {
+            dayDiv.innerHTML += `<div class="badge-note">📝</div>`;
+            const tooltip = document.createElement("div");
+            tooltip.className = "note-tooltip";
+            tooltip.textContent = note.length > 65 ? note.substring(0, 62) + "..." : note;
+            dayDiv.appendChild(tooltip);
+            }
             daysDiv.appendChild(dayDiv);
             }
             monthDiv.appendChild(daysDiv);
-            calendar.appendChild(monthDiv);
+            calendarDiv.appendChild(monthDiv);
             }
             updateCounters();
             }
 
-            // Soporte para tooltip en móvil (mantener presionado)
-            document.addEventListener('touchstart', function(e) {
-            let target = e.target.closest('.day');
-            if (!target) return;
-            let tooltip = target.querySelector('.tooltip');
-            if (!tooltip) return;
-            let timeout = setTimeout(() => {
-            tooltip.style.opacity = '1';
-            tooltip.style.transform = 'translateX(-50%) translateY(6px)';
-            }, 400);
-            let hide = () => {
-            clearTimeout(timeout);
-            if (tooltip) {
-            tooltip.style.opacity = '0';
-            tooltip.style.transform = 'translateX(-50%)';
-            }
-            };
-            target.addEventListener('touchend', hide, {once: true});
-            target.addEventListener('touchcancel', hide, {once: true});
-            target.addEventListener('touchmove', hide, {once: true});
-            }, {passive: true});
-
-            let selectedDateInfo = null; // {dateKey, year, month, day, dayDiv}
-
             function handleDayClick(dayDiv, year, month, day) {
             const dateKey = `${year}-${month+1}-${day}`;
             selectedDateInfo = { dateKey, year, month, day, dayDiv };
-
+            const currentNote = yearData[year]?.notes?.[dateKey] || "";
+            document.getElementById("noteInput").value = currentNote;
             const carry = calculateCarryOver(year - 1);
             const data = yearData[year] || { vacation: new Set(), vacationPrev: new Set() };
-
             const remainingCurrent = vacationLimit - data.vacation.size;
-            const remainingCarry   = carry - data.vacationPrev.size;
-            const totalRemaining   = remainingCurrent + remainingCarry;
-
-            // Mostramos/ocultamos según disponibilidad
+            const remainingCarry = carry - data.vacationPrev.size;
+            const totalRemaining = remainingCurrent + remainingCarry;
             const optionsDiv = document.getElementById("vacationOptions");
-            const noDaysMsg  = document.getElementById("noMoreDaysMessage");
-
+            const noDaysMsg = document.getElementById("noMoreDaysMessage");
             if (totalRemaining <= 0) {
             optionsDiv.style.display = "none";
             noDaysMsg.style.display = "block";
             } else {
             optionsDiv.style.display = "block";
             noDaysMsg.style.display = "none";
-
-            // Deshabilitamos botones individuales si corresponde
             document.getElementById("btnVacCurrent").disabled = remainingCurrent <= 0;
-            document.getElementById("btnVacPrev").disabled    = remainingCarry   <= 0;
-
+            document.getElementById("btnVacPrev").disabled = remainingCarry <= 0;
             document.getElementById("btnVacCurrent").style.opacity = remainingCurrent <= 0 ? "0.5" : "1";
-            document.getElementById("btnVacPrev").style.opacity    = remainingCarry   <= 0 ? "0.5" : "1";
+            document.getElementById("btnVacPrev").style.opacity = remainingCarry <= 0 ? "0.5" : "1";
             }
-
-            // Mostramos el modal
             document.getElementById("dayModal").style.display = "flex";
             }
 
-            // -----------------------
-            // Listeners del modal principal
-            // -----------------------
+            function performVacationMark(dateKey, year, month, day, dayDiv, usePrev, markWholeWeek) {
+            const data = yearData[year];
+            const holidays = getHolidaysForYear(year);
+            dayDiv.classList.remove("vacation", "vacation-prev");
+            const badge = dayDiv.querySelector(".badge-an");
+            if (badge) badge.remove();
+            data.vacation.delete(dateKey);
+            data.vacationPrev.delete(dateKey);
+            let daysToMark = [dateKey];
+            if (markWholeWeek) {
+            const dow = new Date(year, month, day).getDay();
+            for (let i = dow + 1; i <= 5; i++) {
+            const tempDate = new Date(year, month, day + (i - dow));
+            const tempKey = `${year}-${tempDate.getMonth()+1}-${tempDate.getDate()}`;
+            daysToMark.push(tempKey);
+            }
+            }
+            const carry = calculateCarryOver(year - 1);
+            daysToMark.forEach(k => {
+            if (holidays.has(k)) return;
+            if (usePrev) {
+            if (data.vacationPrev.size < carry) data.vacationPrev.add(k);
+            } else {
+            if (data.vacation.size < vacationLimit) data.vacation.add(k);
+            }
+            });
+            delete carryOver[year];
+            saveData();
+            createCalendar(year);
+            }
 
+            function tryMarkVacation(usePrev) {
+            if (!selectedDateInfo) return;
+            document.getElementById("dayModal").style.display = "none";
+            const { dateKey, year, month, day, dayDiv } = selectedDateInfo;
+            const dow = new Date(year, month, day).getDay();
+            if (dow >= 1 && dow <= 5) {
+            document.getElementById("weekModal").style.display = "flex";
+            const finishMark = (markWholeWeek) => {
+            document.getElementById("weekModal").style.display = "none";
+            performVacationMark(dateKey, year, month, day, dayDiv, usePrev, markWholeWeek);
+            selectedDateInfo = null;
+            };
+            document.getElementById("btnWeekYes").onclick = () => finishMark(true);
+            document.getElementById("btnWeekNo").onclick = () => finishMark(false);
+            } else {
+            performVacationMark(dateKey, year, month, day, dayDiv, usePrev, false);
+            selectedDateInfo = null;
+            }
+            }
+
+            function deleteAllNotes() {
+            if (!yearData[currentYear]) return;
+            const noteCount = Object.keys(yearData[currentYear].notes || {}).length;
+            if (noteCount === 0) {
+            alert("📭 No hay notas para eliminar en este año.");
+            return;
+            }
+            if (confirm(`¿Eliminar todas las ${noteCount} notas personales del año ${currentYear}?\n\nEsta acción no se puede deshacer.`)) {
+            yearData[currentYear].notes = {};
+            saveData();
+            createCalendar(currentYear);
+            alert("✅ Todas las notas han sido eliminadas.");
+            }
+            }
+
+            // Event listeners
             document.getElementById("btnCancelModal").onclick = () => {
             document.getElementById("dayModal").style.display = "none";
             selectedDateInfo = null;
@@ -914,131 +1011,71 @@
             if (!selectedDateInfo) return;
             const { dateKey, year, dayDiv } = selectedDateInfo;
             const data = yearData[year];
-
             dayDiv.classList.remove("vacation", "vacation-prev");
             const badge = dayDiv.querySelector(".badge-an");
             if (badge) badge.remove();
-
             data.vacation.delete(dateKey);
             data.vacationPrev.delete(dateKey);
-
-
             document.getElementById("dayModal").style.display = "none";
             saveData();
             createCalendar(year);
             selectedDateInfo = null;
+            };
+
+            // NUEVO BOTÓN: Eliminar solo la nota del día
+            // NUEVO BOTÓN: Eliminar solo la nota del día (SIN mensajes de confirmación)
+            document.getElementById("btnDeleteNote").onclick = () => {
+            if (!selectedDateInfo) return;
+            const { dateKey, year } = selectedDateInfo;
+            const currentNote = yearData[year]?.notes?.[dateKey];
+
+            if (currentNote) {
+            if (yearData[year].notes && yearData[year].notes[dateKey]) {
+            delete yearData[year].notes[dateKey];
+            saveData();
+            createCalendar(year);
+            document.getElementById("dayModal").style.display = "none";
+            selectedDateInfo = null;
+            }
+            }
             };
 
             document.getElementById("btnVacCurrent").onclick = () => tryMarkVacation(false);
-            document.getElementById("btnVacPrev").onclick   = () => tryMarkVacation(true);
+            document.getElementById("btnVacPrev").onclick = () => tryMarkVacation(true);
 
-            function tryMarkVacation(usePrev) {
+            document.getElementById("btnSaveNote").onclick = () => {
             if (!selectedDateInfo) return;
+            const noteText = document.getElementById("noteInput").value.trim();
+            const { dateKey, year } = selectedDateInfo;
+            if (!yearData[year].notes) yearData[year].notes = {};
+            if (noteText === "") {
+            delete yearData[year].notes[dateKey];
+            } else {
+            yearData[year].notes[dateKey] = noteText;
+            }
+            saveData();
+            createCalendar(year);
             document.getElementById("dayModal").style.display = "none";
-
-            const { dateKey, year, month, day, dayDiv } = selectedDateInfo;
-            const dow = new Date(year, month, day).getDay();
-
-            // Solo preguntamos por la semana si es día laborable (lun-vie)
-            if (dow >= 1 && dow <= 5) {
-            document.getElementById("weekModal").style.display = "flex";
-
-            // Preparamos las acciones según la respuesta
-            const finishMark = (markWholeWeek) => {
-            document.getElementById("weekModal").style.display = "none";
-            performVacationMark(dateKey, year, month, day, dayDiv, usePrev, markWholeWeek);
             selectedDateInfo = null;
             };
 
-            document.getElementById("btnWeekYes").onclick = () => finishMark(true);
-            document.getElementById("btnWeekNo").onclick  = () => finishMark(false);
-            } else {
-            // Si es sábado o domingo → marcamos solo el día
-            performVacationMark(dateKey, year, month, day, dayDiv, usePrev, false);
-            selectedDateInfo = null;
-            }
-            }
-
-            function performVacationMark(dateKey, year, month, day, dayDiv, usePrev, markWholeWeek) {
-            const data = yearData[year];
-            const holidays = getHolidaysForYear(year);
-
-            // Limpiamos primero cualquier marca anterior en ese día
-            dayDiv.classList.remove("vacation", "vacation-prev");
-            const badge = dayDiv.querySelector(".badge-an");
-            if (badge) badge.remove();
-            data.vacation.delete(dateKey);
-            data.vacationPrev.delete(dateKey);
-
-            let daysToMark = [dateKey];
-
-            if (markWholeWeek) {
-            const dow = new Date(year, month, day).getDay();
-            for (let i = dow + 1; i <= 5; i++) {
-            const tempDate = new Date(year, month, day + (i - dow));
-            const tempKey = `${year}-${tempDate.getMonth()+1}-${tempDate.getDate()}`;
-            daysToMark.push(tempKey);
-            }
-            }
-
-            let successCount = 0;
-            let attemptedCount = 0;
-
-            const carry = calculateCarryOver(year - 1);
-
-            daysToMark.forEach(k => {
-            if (holidays.has(k)) return; // No marcamos festivos
-
-            attemptedCount++;
-
-            if (usePrev) {
-            if (data.vacationPrev.size < carry) {
-            data.vacationPrev.add(k);
-            successCount++;
-            }
-            } else {
-            if (data.vacation.size < vacationLimit) {
-            data.vacation.add(k);
-            successCount++;
-            }
-            }
-            });
-
-
-            delete carryOver[year];
-            saveData();
-            createCalendar(year);
-            }
-            function showErrorModal(title, message) {
-            document.getElementById("errorModalTitle").textContent = title;
-            document.getElementById("errorModalMessage").textContent = message;
-            document.getElementById("errorModal").style.display = "flex";
-            }
-
-            // Cerrar el modal de error
             document.getElementById("btnCloseError").onclick = () => {
             document.getElementById("errorModal").style.display = "none";
             };
-            function updateCounters(){
-            const data = yearData[currentYear] || {vacation:new Set(), vacationPrev:new Set()};
-            const carry = calculateCarryOver(currentYear - 1);
-            vacationCount.textContent = data.vacation.size;
-            vacationPrevCount.textContent = `${data.vacationPrev.size} (de ${carry})`;
-
-            remaining.textContent = (vacationLimit + carry) - (data.vacation.size + data.vacationPrev.size);
-            }
-
             document.getElementById("prevYear").onclick = () => createCalendar(currentYear - 1);
             document.getElementById("nextYear").onclick = () => createCalendar(currentYear + 1);
             document.getElementById("yearInput").onchange = (e) => createCalendar(parseInt(e.target.value));
             document.getElementById("resetYear").onclick = () => {
-            if(confirm("Borrar todo el año?")) {
-            yearData[currentYear] = { vacation: new Set(), vacationPrev: new Set()};
-            saveData(); createCalendar(currentYear);
+            if(confirm("¿Borrar todas las marcas de vacaciones de este año? Esto no eliminará tus notas personales.")) {
+            if (yearData[currentYear]) {
+            yearData[currentYear].vacation = new Set();
+            yearData[currentYear].vacationPrev = new Set();
+            saveData();
+            createCalendar(currentYear);
+            }
             }
             };
-
-
+            document.getElementById("deleteAllNotes").onclick = () => deleteAllNotes();
         </script>
     </body>
 </html>
