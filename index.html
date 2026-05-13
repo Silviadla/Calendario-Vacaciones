@@ -278,24 +278,27 @@
                 border: 1px solid transparent;
                 position: relative;
             }
-            .day:hover {
-                transform: scale(1.08);
-                box-shadow: 0 6px 16px rgba(0,0,0,0.12);
-            }
-            /* Borde amarillo fosforito para días con nota - SIN PARPADEO */
-            .day.has-note {
-                border: 3px solid #ffcc00;
-                box-shadow: 0 0 8px rgba(255, 204, 0, 0.6);
-            }
-            /* Al hacer hover, se intensifica un poco pero sin animación extraña */
-            .day.has-note:hover {
-                border: 3px solid #ffea00;
-                box-shadow: 0 0 12px rgba(255, 234, 0, 0.8);
-            }
-            .vacation, .vacation-prev {
-                background: var(--vacation);
-                color: white;
-            }
+           /* Borde amarillo fosforito para días con nota - SIN DIFUMINADO */
+.day.has-note {
+    border: 3px solid #ffcc00;
+    /* Sin box-shadow para evitar difuminado */
+}
+/* Al hacer hover, se intensifica el color pero sin difuminado */
+.day.has-note:hover {
+    border: 3px solid #ffea00;
+}
+
+/* Asegurar que el borde amarillo sea visible incluso con fondo de vacaciones */
+.vacation.has-note, .vacation-prev.has-note {
+    border: 3px solid #ffcc00;
+}
+
+/* Para el día actual con nota - combinar bordes sin difuminado */
+.today.has-note {
+    border: 4px solid var(--primary) !important;
+    outline: 2px solid #ffcc00;
+    outline-offset: -3px;
+}
             /* Asegurar que el borde amarillo sea visible incluso con fondo de vacaciones */
             .vacation.has-note, .vacation-prev.has-note {
                 border: 3px solid #ffcc00;
