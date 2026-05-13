@@ -26,7 +26,7 @@
                 --holiday-local: #a855f7;
                 --weekend: #dbeafe;
                 --shadow: 0 6px 16px rgba(0,0,0,0.08);
-                --note-border: #ffaa00;
+                --note-border: #ffcc00;
             }
             @media (prefers-color-scheme: dark) {
                 :root {
@@ -273,36 +273,32 @@
                 justify-content: center;
                 border-radius: 14px;
                 cursor: pointer;
-                transition: all 0.3s;
+                transition: transform 0.2s;
                 font-weight: 500;
                 border: 1px solid transparent;
                 position: relative;
             }
-           /* Borde amarillo fosforito para días con nota - SIN DIFUMINADO */
-.day.has-note {
-    border: 3px solid #ffcc00;
-    /* Sin box-shadow para evitar difuminado */
-}
-/* Al hacer hover, se intensifica el color pero sin difuminado */
-.day.has-note:hover {
-    border: 3px solid #ffea00;
-}
-
-/* Asegurar que el borde amarillo sea visible incluso con fondo de vacaciones */
-.vacation.has-note, .vacation-prev.has-note {
-    border: 3px solid #ffcc00;
-}
-
-/* Para el día actual con nota - combinar bordes sin difuminado */
-.today.has-note {
-    border: 4px solid var(--primary) !important;
-    outline: 2px solid #ffcc00;
-    outline-offset: -3px;
-}
+            .day:hover {
+                transform: scale(1.08);
+            }
+            /* Borde amarillo fosforito para días con nota - SIN DIFUMINADO */
+            .day.has-note {
+                border: 3px solid #ffcc00;
+            }
+            /* Al hacer hover, se intensifica el color pero sin difuminado */
+            .day.has-note:hover {
+                border: 3px solid #ffea00;
+            }
+            .vacation, .vacation-prev {
+                background: var(--vacation);
+                color: white;
+            }
             /* Asegurar que el borde amarillo sea visible incluso con fondo de vacaciones */
             .vacation.has-note, .vacation-prev.has-note {
                 border: 3px solid #ffcc00;
-                box-shadow: 0 0 8px rgba(255, 204, 0, 0.6);
+            }
+            .vacation.has-note:hover, .vacation-prev.has-note:hover {
+                border: 3px solid #ffea00;
             }
             .holiday-national {
                 background: var(--holiday-national);
@@ -320,15 +316,12 @@
             .today {
                 border: 4px solid var(--primary) !important;
                 font-weight: bold;
-                box-shadow: 0 0 20px rgba(76, 110, 245, 0.4);
             }
-            /* Si un día tiene nota y es today, priorizar el borde actual pero combinar */
+            /* Para el día actual con nota - combinar bordes sin difuminado */
             .today.has-note {
                 border: 4px solid var(--primary) !important;
-                box-shadow: 0 0 20px rgba(76, 110, 245, 0.4);
-                /* añadir un pequeño borde interior amarillo como indicador */
                 outline: 2px solid #ffcc00;
-                outline-offset: -2px;
+                outline-offset: -3px;
             }
             .badge-an {
                 position: absolute;
@@ -651,7 +644,7 @@
                 <span><span class="dot" style="background:var(--vacation-prev);"></span> Vacaciones año anterior (AN)</span>
                 <span><span class="dot" style="background:var(--holiday-national);"></span> Festivo Nacional</span>
                 <span><span class="dot" style="background:var(--holiday-local);"></span> Festivo León</span>
-                <span><span class="dot" style="background:#ffcc00; box-shadow:0 0 4px #ffaa00;"></span> Nota (borde amarillo)</span>
+                <span><span class="dot" style="background:#ffcc00;"></span> Nota (borde amarillo)</span>
             </div>
             <div class="calendar" id="calendar"></div>
         </div>
