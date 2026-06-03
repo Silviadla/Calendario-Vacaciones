@@ -26,7 +26,6 @@
                 --holiday-local: #a855f7;
                 --weekend: #dbeafe;
                 --shadow: 0 6px 16px rgba(0,0,0,0.08);
-                --note-border: #ffcc00;
             }
             @media (prefers-color-scheme: dark) {
                 :root {
@@ -40,7 +39,6 @@
                     --holiday-local: #c084fc;
                     --weekend: #6366f1;
                     --shadow: 0 6px 16px rgba(0,0,0,0.3);
-                    --note-border: #ffcc33;
                 }
             }
             * {
@@ -275,30 +273,16 @@
                 cursor: pointer;
                 transition: transform 0.2s;
                 font-weight: 500;
-                border: 1px solid transparent;
+                border: 3px solid transparent;
                 position: relative;
             }
             .day:hover {
                 transform: scale(1.08);
             }
-            /* Borde amarillo fosforito para días con nota - SIN DIFUMINADO */
-            .day.has-note {
-                border: 3px solid #ffcc00;
-            }
-            /* Al hacer hover, se intensifica el color pero sin difuminado */
-            .day.has-note:hover {
-                border: 3px solid #ffea00;
-            }
+            /* Las notas tendrán su color de borde aplicado dinámicamente */
             .vacation, .vacation-prev {
                 background: var(--vacation);
                 color: white;
-            }
-            /* Asegurar que el borde amarillo sea visible incluso con fondo de vacaciones */
-            .vacation.has-note, .vacation-prev.has-note {
-                border: 3px solid #ffcc00;
-            }
-            .vacation.has-note:hover, .vacation-prev.has-note:hover {
-                border: 3px solid #ffea00;
             }
             .holiday-national {
                 background: var(--holiday-national);
@@ -316,12 +300,6 @@
             .today {
                 border: 4px solid var(--primary) !important;
                 font-weight: bold;
-            }
-            /* Para el día actual con nota - combinar bordes sin difuminado */
-            .today.has-note {
-                border: 4px solid var(--primary) !important;
-                outline: 2px solid #ffcc00;
-                outline-offset: -3px;
             }
             .badge-an {
                 position: absolute;
@@ -368,14 +346,13 @@
                 border: 8px solid transparent;
                 border-top-color: rgba(0,0,0,0.95);
             }
-            /* Tooltip para notas - fondo amarillo */
+            /* Tooltip para notas - fondo del color de la nota */
             .note-tooltip {
                 position: absolute;
                 bottom: 100%;
                 left: 50%;
                 transform: translateX(-50%);
-                background: #ffcc00;
-                color: #333;
+                color: white;
                 padding: 6px 12px;
                 border-radius: 12px;
                 font-size: 0.75rem;
@@ -390,7 +367,6 @@
                 line-height: 1.3;
                 margin-bottom: 8px;
                 box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-                border: 1px solid #ffaa00;
             }
             .day:hover .note-tooltip,
             .day:active .note-tooltip {
@@ -404,7 +380,40 @@
                 left: 50%;
                 transform: translateX(-50%);
                 border: 7px solid transparent;
-                border-top-color: #ffcc00;
+            }
+            /* Paleta de colores */
+            .color-palette {
+                display: flex;
+                gap: 10px;
+                flex-wrap: wrap;
+                justify-content: center;
+                margin: 12px 0;
+            }
+            .color-option {
+                width: 36px;
+                height: 36px;
+                border-radius: 50%;
+                cursor: pointer;
+                transition: transform 0.2s, border 0.2s;
+                border: 2px solid transparent;
+                box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            }
+            .color-option:hover {
+                transform: scale(1.15);
+            }
+            .color-option.selected {
+                border: 3px solid white;
+                box-shadow: 0 0 0 2px #333;
+                transform: scale(1.1);
+            }
+            .current-color-preview {
+                display: inline-block;
+                width: 24px;
+                height: 24px;
+                border-radius: 50%;
+                vertical-align: middle;
+                margin-left: 8px;
+                border: 1px solid #ccc;
             }
             @media (max-width: 768px) {
                 body {
@@ -450,13 +459,15 @@
                 }
                 .day {
                     height: 40px;
+                    border-width: 2px;
                 }
                 .button-group {
                     flex-direction: column;
                     gap: 0.5rem;
                 }
-                .day.has-note {
-                    border: 2px solid #ffcc00;
+                .color-option {
+                    width: 30px;
+                    height: 30px;
                 }
             }
             .modal {
@@ -474,10 +485,12 @@
                 padding: 2rem;
                 border-radius: 20px;
                 width: 90%;
-                max-width: 380px;
+                max-width: 420px;
                 box-shadow: var(--shadow);
                 text-align: center;
                 border: 1px solid var(--border);
+                max-height: 90vh;
+                overflow-y: auto;
             }
             .modal-btn {
                 width: 100%;
@@ -604,12 +617,30 @@
                         😔 No te quedan más días de vacaciones disponibles
                     </div>
 
-                    <!-- SECCIÓN DE NOTAS CON BOTONES PARA GUARDAR Y ELIMINAR -->
+                    <!-- SECCIÓN DE NOTAS CON PALETA DE COLORES -->
                     <div style="margin: 1.6rem 0; padding: 16px; background: #f8fafc; border-radius: 14px; border: 1px solid var(--border);">
-                        <div style="font-weight: 600; margin-bottom: 10px; color: var(--primary);">📝 Nota personal</div>
+                        <div style="font-weight: 600; margin-bottom: 10px; color: var(--primary);">
+                            📝 Nota personal 
+                            <span id="colorPreview" class="current-color-preview" style="background-color: #ffcc00;"></span>
+                        </div>
                         <input type="text" id="noteInput" placeholder="Escribe una nota (ej: Dentista, Cumpleaños...)" 
                                style="width:100%; padding:12px; border-radius:10px; border:1px solid var(--border); font-size:1rem; margin-bottom:8px;">
-                        <div style="display: flex; gap: 8px; margin-top: 5px;">
+                        
+                        <!-- Paleta de colores -->
+                        <div style="font-size: 0.8rem; margin: 8px 0 4px 0; opacity: 0.7;">🎨 Elige color del borde:</div>
+                        <div class="color-palette" id="colorPalette">
+                            <div class="color-option" style="background-color: #ffcc00;" data-color="#ffcc00"></div>
+                            <div class="color-option" style="background-color: #ff4444;" data-color="#ff4444"></div>
+                            <div class="color-option" style="background-color: #44ff44;" data-color="#44ff44"></div>
+                            <div class="color-option" style="background-color: #4444ff;" data-color="#4444ff"></div>
+                            <div class="color-option" style="background-color: #ff44ff;" data-color="#ff44ff"></div>
+                            <div class="color-option" style="background-color: #ff8844;" data-color="#ff8844"></div>
+                            <div class="color-option" style="background-color: #44ffff;" data-color="#44ffff"></div>
+                            <div class="color-option" style="background-color: #ffffff;" data-color="#ffffff"></div>
+                            <div class="color-option" style="background-color: #000000;" data-color="#000000"></div>
+                        </div>
+                        
+                        <div style="display: flex; gap: 8px; margin-top: 12px;">
                             <button id="btnSaveNote" class="modal-btn" style="background:#8b5cf6; color:white; flex:1;">💾 Guardar Nota</button>
                             <button id="btnDeleteNote" class="modal-btn delete-note" style="flex:1;">🗑️ Eliminar Nota</button>
                         </div>
@@ -644,7 +675,7 @@
                 <span><span class="dot" style="background:var(--vacation-prev);"></span> Vacaciones año anterior (AN)</span>
                 <span><span class="dot" style="background:var(--holiday-national);"></span> Festivo Nacional</span>
                 <span><span class="dot" style="background:var(--holiday-local);"></span> Festivo León</span>
-                <span><span class="dot" style="background:#ffcc00;"></span> Nota (borde amarillo)</span>
+                <span><span class="dot" style="background:#ffcc00;"></span> Nota (color personalizable)</span>
             </div>
             <div class="calendar" id="calendar"></div>
         </div>
@@ -662,6 +693,14 @@
             firebase.initializeApp(firebaseConfig);
             const db = firebase.firestore();
             let userId = null;
+
+            // Variables globales
+            let currentYear = 2026;
+            const vacationLimit = 23;
+            let yearData = {};
+            let carryOver = {};
+            let selectedDateInfo = null;
+            let selectedColor = "#ffcc00"; // Color por defecto
 
             // Funciones de autenticación
             function togglePassword() {
@@ -718,13 +757,6 @@
             document.getElementById('calendarSection').style.display = 'none';
             }
             });
-
-            // Variables globales
-            let currentYear = 2026;
-            const vacationLimit = 23;
-            let yearData = {};
-            let carryOver = {};
-            let selectedDateInfo = null;
 
             // Funciones de festivos
             function getEasterDate(year) {
@@ -793,7 +825,8 @@
             converted[y] = {
             vacation: new Set(data[y].vacation || []),
             vacationPrev: new Set(data[y].vacationPrev || []),
-            notes: data[y].notes || {}
+            notes: data[y].notes || {},
+            noteColors: data[y].noteColors || {}
             };
             }
             return converted;
@@ -805,7 +838,8 @@
             converted[y] = {
             vacation: Array.from(data[y].vacation),
             vacationPrev: Array.from(data[y].vacationPrev),
-            notes: data[y].notes || {}
+            notes: data[y].notes || {},
+            noteColors: data[y].noteColors || {}
             };
             }
             return converted;
@@ -855,15 +889,33 @@
             document.getElementById("remaining").textContent = (vacationLimit + carry) - (data.vacation.size + data.vacationPrev.size);
             }
 
+            // Inicializar paleta de colores
+            function initColorPalette(currentColor) {
+            const colorOptions = document.querySelectorAll('.color-option');
+            colorOptions.forEach(option => {
+            option.classList.remove('selected');
+            if (option.dataset.color === currentColor) {
+            option.classList.add('selected');
+            }
+            option.onclick = () => {
+            colorOptions.forEach(opt => opt.classList.remove('selected'));
+            option.classList.add('selected');
+            selectedColor = option.dataset.color;
+            document.getElementById('colorPreview').style.backgroundColor = selectedColor;
+            };
+            });
+            }
+
             function createCalendar(year) {
             currentYear = year;
             document.getElementById("yearInput").value = year;
             ensureCarryOverUpTo(year - 1);
             const holidays = getHolidaysForYear(year);
             if (!yearData[year]) {
-            yearData[year] = { vacation: new Set(), vacationPrev: new Set(), notes: {} };
+            yearData[year] = { vacation: new Set(), vacationPrev: new Set(), notes: {}, noteColors: {} };
             }
             if (!yearData[year].notes) yearData[year].notes = {};
+            if (!yearData[year].noteColors) yearData[year].noteColors = {};
             const calendarDiv = document.getElementById("calendar");
             calendarDiv.innerHTML = "";
             const months = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
@@ -904,7 +956,6 @@
             dayDiv.classList.add("weekend");
             }
             
-            // TODOS LOS DÍAS SON CLICKEABLES
             dayDiv.onclick = () => handleDayClick(dayDiv, year, m, d);
             
             if (yearData[year].vacation.has(dateKey)) dayDiv.classList.add("vacation");
@@ -913,12 +964,20 @@
             dayDiv.innerHTML += `<div class="badge-an">AN</div>`;
             }
             const note = yearData[year]?.notes?.[dateKey];
+            const noteColor = yearData[year]?.noteColors?.[dateKey];
             if (note) {
-            // Añadir clase has-note para el borde amarillo
-            dayDiv.classList.add("has-note");
+            // Aplicar color de borde personalizado
+            dayDiv.style.borderColor = noteColor || "#ffcc00";
+            dayDiv.style.borderWidth = "3px";
+            dayDiv.style.borderStyle = "solid";
             const tooltip = document.createElement("div");
             tooltip.className = "note-tooltip";
             tooltip.textContent = note.length > 65 ? note.substring(0, 62) + "..." : note;
+            tooltip.style.backgroundColor = noteColor || "#ffcc00";
+            // Flecha del tooltip del mismo color
+            const style = document.createElement('style');
+            style.textContent = `.note-tooltip::after { border-top-color: ${noteColor || "#ffcc00"} !important; }`;
+            tooltip.appendChild(style);
             dayDiv.appendChild(tooltip);
             }
             daysDiv.appendChild(dayDiv);
@@ -933,7 +992,12 @@
             const dateKey = `${year}-${month+1}-${day}`;
             selectedDateInfo = { dateKey, year, month, day, dayDiv };
             const currentNote = yearData[year]?.notes?.[dateKey] || "";
+            const currentNoteColor = yearData[year]?.noteColors?.[dateKey] || "#ffcc00";
             document.getElementById("noteInput").value = currentNote;
+            selectedColor = currentNoteColor;
+            document.getElementById('colorPreview').style.backgroundColor = selectedColor;
+            initColorPalette(selectedColor);
+            
             const carry = calculateCarryOver(year - 1);
             const data = yearData[year] || { vacation: new Set(), vacationPrev: new Set() };
             const remainingCurrent = vacationLimit - data.vacation.size;
@@ -1015,6 +1079,7 @@
             }
             if (confirm(`¿Eliminar todas las ${noteCount} notas personales del año ${currentYear}?\n\nEsta acción no se puede deshacer.`)) {
             yearData[currentYear].notes = {};
+            yearData[currentYear].noteColors = {};
             saveData();
             createCalendar(currentYear);
             alert("✅ Todas las notas han sido eliminadas.");
@@ -1045,16 +1110,13 @@
             document.getElementById("btnDeleteNote").onclick = () => {
             if (!selectedDateInfo) return;
             const { dateKey, year } = selectedDateInfo;
-            const currentNote = yearData[year]?.notes?.[dateKey];
-
-            if (currentNote) {
             if (yearData[year].notes && yearData[year].notes[dateKey]) {
             delete yearData[year].notes[dateKey];
+            delete yearData[year].noteColors?.[dateKey];
             saveData();
             createCalendar(year);
             document.getElementById("dayModal").style.display = "none";
             selectedDateInfo = null;
-            }
             }
             };
 
@@ -1066,10 +1128,13 @@
             const noteText = document.getElementById("noteInput").value.trim();
             const { dateKey, year } = selectedDateInfo;
             if (!yearData[year].notes) yearData[year].notes = {};
+            if (!yearData[year].noteColors) yearData[year].noteColors = {};
             if (noteText === "") {
             delete yearData[year].notes[dateKey];
+            delete yearData[year].noteColors[dateKey];
             } else {
             yearData[year].notes[dateKey] = noteText;
+            yearData[year].noteColors[dateKey] = selectedColor;
             }
             saveData();
             createCalendar(year);
