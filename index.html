@@ -26,6 +26,8 @@
                 --holiday-local: #a855f7;
                 --weekend: #dbeafe;
                 --shadow: 0 6px 16px rgba(0,0,0,0.08);
+                --spain-flag-red: #c60b1e;
+                --spain-flag-yellow: #ffc400;
             }
             @media (prefers-color-scheme: dark) {
                 :root {
@@ -39,6 +41,8 @@
                     --holiday-local: #c084fc;
                     --weekend: #6366f1;
                     --shadow: 0 6px 16px rgba(0,0,0,0.3);
+                    --spain-flag-red: #e31837;
+                    --spain-flag-yellow: #ffde00;
                 }
             }
             * {
@@ -287,6 +291,27 @@
                 background: var(--holiday-national);
                 color: white;
             }
+            /* Estilo especial para el 12 de Octubre (Fiesta Nacional de España) */
+            .day.spain-flag {
+                background: linear-gradient(180deg, 
+                    var(--spain-flag-red) 0%, 
+                    var(--spain-flag-red) 33%, 
+                    var(--spain-flag-yellow) 33%, 
+                    var(--spain-flag-yellow) 66%, 
+                    var(--spain-flag-red) 66%, 
+                    var(--spain-flag-red) 100%);
+                color: #000000 !important;
+                font-weight: bold;
+                text-shadow: 0 0 2px white;
+            }
+            .day.spain-flag span {
+                color: #000000 !important;
+                font-weight: 900;
+                background-color: rgba(255,255,255,0.7);
+                padding: 2px 6px;
+                border-radius: 20px;
+                display: inline-block;
+            }
             .holiday-local {
                 background: var(--holiday-local);
                 color: white;
@@ -371,7 +396,6 @@
                 opacity: 1;
                 transform: translateX(-50%) translateY(-8px);
             }
-            /* El pico se aplicará dinámicamente con JavaScript para que herede el color correcto */
             .color-palette {
                 display: flex;
                 gap: 10px;
@@ -665,6 +689,7 @@
                 <span><span class="dot" style="background:var(--vacation-prev);"></span> Vacaciones año anterior (AN)</span>
                 <span><span class="dot" style="background:var(--holiday-national);"></span> Festivo Nacional</span>
                 <span><span class="dot" style="background:var(--holiday-local);"></span> Festivo León</span>
+                <span><span class="dot" style="background:linear-gradient(180deg, #c60b1e 0%, #c60b1e 33%, #ffc400 33%, #ffc400 66%, #c60b1e 66%, #c60b1e 100%);"></span> 12 Octubre (🇪🇸)</span>
                 <span><span class="dot" style="background:#ffcc00;"></span> Nota (color personalizable)</span>
             </div>
             <div class="calendar" id="calendar"></div>
@@ -931,8 +956,17 @@
             const today = new Date();
             if (dateKey === `${today.getFullYear()}-${today.getMonth()+1}-${today.getDate()}`) dayDiv.classList.add("today");
             const holiday = holidays.get(dateKey);
+            
+            // Verificar si es el 12 de Octubre para aplicar estilo especial de bandera
+            const isSpainFlagDay = (m+1 === 10 && d === 12);
+            
             if (holiday) {
+            if (isSpainFlagDay) {
+            // Estilo especial para el 12 de Octubre
+            dayDiv.classList.add("spain-flag");
+            } else {
             dayDiv.classList.add(holiday.type === "national" ? "holiday-national" : "holiday-local");
+            }
             const tooltip = document.createElement("div");
             tooltip.className = "tooltip";
             tooltip.textContent = holiday.name;
@@ -958,7 +992,6 @@
             tooltip.className = "note-tooltip";
             tooltip.textContent = note.length > 65 ? note.substring(0, 62) + "..." : note;
             tooltip.style.backgroundColor = noteColor || "#ffcc00";
-            // Crear el pico (triángulo) con el mismo color
             const arrow = document.createElement("div");
             arrow.style.position = "absolute";
             arrow.style.top = "100%";
