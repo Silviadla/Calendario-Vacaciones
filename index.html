@@ -371,14 +371,7 @@
                 opacity: 1;
                 transform: translateX(-50%) translateY(-8px);
             }
-            .note-tooltip::after {
-                content: '';
-                position: absolute;
-                top: 100%;
-                left: 50%;
-                transform: translateX(-50%);
-                border: 7px solid transparent;
-            }
+            /* El pico se aplicará dinámicamente con JavaScript para que herede el color correcto */
             .color-palette {
                 display: flex;
                 gap: 10px;
@@ -965,9 +958,19 @@
             tooltip.className = "note-tooltip";
             tooltip.textContent = note.length > 65 ? note.substring(0, 62) + "..." : note;
             tooltip.style.backgroundColor = noteColor || "#ffcc00";
-            const style = document.createElement('style');
-            style.textContent = `.note-tooltip::after { border-top-color: ${noteColor || "#ffcc00"} !important; }`;
-            tooltip.appendChild(style);
+            // Crear el pico (triángulo) con el mismo color
+            const arrow = document.createElement("div");
+            arrow.style.position = "absolute";
+            arrow.style.top = "100%";
+            arrow.style.left = "50%";
+            arrow.style.transform = "translateX(-50%)";
+            arrow.style.width = "0";
+            arrow.style.height = "0";
+            arrow.style.borderLeft = "7px solid transparent";
+            arrow.style.borderRight = "7px solid transparent";
+            arrow.style.borderTop = `7px solid ${noteColor || "#ffcc00"}`;
+            arrow.style.pointerEvents = "none";
+            tooltip.appendChild(arrow);
             dayDiv.appendChild(tooltip);
             }
             daysDiv.appendChild(dayDiv);
