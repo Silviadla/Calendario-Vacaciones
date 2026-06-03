@@ -279,7 +279,6 @@
             .day:hover {
                 transform: scale(1.08);
             }
-            /* Las notas tendrán su color de borde aplicado dinámicamente */
             .vacation, .vacation-prev {
                 background: var(--vacation);
                 color: white;
@@ -346,7 +345,6 @@
                 border: 8px solid transparent;
                 border-top-color: rgba(0,0,0,0.95);
             }
-            /* Tooltip para notas - fondo del color de la nota */
             .note-tooltip {
                 position: absolute;
                 bottom: 100%;
@@ -381,7 +379,6 @@
                 transform: translateX(-50%);
                 border: 7px solid transparent;
             }
-            /* Paleta de colores */
             .color-palette {
                 display: flex;
                 gap: 10px;
@@ -603,7 +600,6 @@
                 <button id="deleteAllNotes" class="btn-reset btn-delete-notes">📝 Borrar todas las notas</button>
             </div>
 
-            <!-- MODAL PRINCIPAL -->
             <div id="dayModal" class="modal" style="display:none;">
                 <div class="modal-content">
                     <h3 style="margin:0 0 1.4rem 0; color:var(--primary);">¿Qué quieres hacer en este día?</h3>
@@ -617,7 +613,6 @@
                         😔 No te quedan más días de vacaciones disponibles
                     </div>
 
-                    <!-- SECCIÓN DE NOTAS CON PALETA DE COLORES -->
                     <div style="margin: 1.6rem 0; padding: 16px; background: #f8fafc; border-radius: 14px; border: 1px solid var(--border);">
                         <div style="font-weight: 600; margin-bottom: 10px; color: var(--primary);">
                             📝 Nota personal 
@@ -626,18 +621,20 @@
                         <input type="text" id="noteInput" placeholder="Escribe una nota (ej: Dentista, Cumpleaños...)" 
                                style="width:100%; padding:12px; border-radius:10px; border:1px solid var(--border); font-size:1rem; margin-bottom:8px;">
                         
-                        <!-- Paleta de colores -->
                         <div style="font-size: 0.8rem; margin: 8px 0 4px 0; opacity: 0.7;">🎨 Elige color del borde:</div>
                         <div class="color-palette" id="colorPalette">
-                            <div class="color-option" style="background-color: #ffcc00;" data-color="#ffcc00"></div>
-                            <div class="color-option" style="background-color: #ff4444;" data-color="#ff4444"></div>
-                            <div class="color-option" style="background-color: #44ff44;" data-color="#44ff44"></div>
-                            <div class="color-option" style="background-color: #4444ff;" data-color="#4444ff"></div>
-                            <div class="color-option" style="background-color: #ff44ff;" data-color="#ff44ff"></div>
-                            <div class="color-option" style="background-color: #ff8844;" data-color="#ff8844"></div>
-                            <div class="color-option" style="background-color: #44ffff;" data-color="#44ffff"></div>
-                            <div class="color-option" style="background-color: #ffffff;" data-color="#ffffff"></div>
-                            <div class="color-option" style="background-color: #000000;" data-color="#000000"></div>
+                            <div class="color-option" style="background-color: #ffcc00;" data-color="#ffcc00" title="Amarillo"></div>
+                            <div class="color-option" style="background-color: #ff4444;" data-color="#ff4444" title="Rojo"></div>
+                            <div class="color-option" style="background-color: #44ff44;" data-color="#44ff44" title="Verde"></div>
+                            <div class="color-option" style="background-color: #4444ff;" data-color="#4444ff" title="Azul"></div>
+                            <div class="color-option" style="background-color: #ff44ff;" data-color="#ff44ff" title="Rosa"></div>
+                            <div class="color-option" style="background-color: #ff8844;" data-color="#ff8844" title="Naranja"></div>
+                            <div class="color-option" style="background-color: #44ffff;" data-color="#44ffff" title="Cian"></div>
+                            <div class="color-option" style="background-color: #ff6699;" data-color="#ff6699" title="Rosa fuerte"></div>
+                            <div class="color-option" style="background-color: #99ff33;" data-color="#99ff33" title="Verde lima"></div>
+                            <div class="color-option" style="background-color: #ff9933;" data-color="#ff9933" title="Naranja claro"></div>
+                            <div class="color-option" style="background-color: #33ffcc;" data-color="#33ffcc" title="Turquesa"></div>
+                            <div class="color-option" style="background-color: #cc33ff;" data-color="#cc33ff" title="Púrpura"></div>
                         </div>
                         
                         <div style="display: flex; gap: 8px; margin-top: 12px;">
@@ -694,15 +691,13 @@
             const db = firebase.firestore();
             let userId = null;
 
-            // Variables globales
             let currentYear = 2026;
             const vacationLimit = 23;
             let yearData = {};
             let carryOver = {};
             let selectedDateInfo = null;
-            let selectedColor = "#ffcc00"; // Color por defecto
+            let selectedColor = "#ffcc00";
 
-            // Funciones de autenticación
             function togglePassword() {
             const passInput = document.getElementById('pass');
             const eyeIcon = document.getElementById('eyeIcon');
@@ -758,7 +753,6 @@
             }
             });
 
-            // Funciones de festivos
             function getEasterDate(year) {
             const a = year % 19;
             const b = Math.floor(year / 100);
@@ -818,7 +812,6 @@
             return holidays;
             }
 
-            // Funciones de datos
             function convertToSets(data) {
             const converted = {};
             for (const y in data) {
@@ -889,7 +882,6 @@
             document.getElementById("remaining").textContent = (vacationLimit + carry) - (data.vacation.size + data.vacationPrev.size);
             }
 
-            // Inicializar paleta de colores
             function initColorPalette(currentColor) {
             const colorOptions = document.querySelectorAll('.color-option');
             colorOptions.forEach(option => {
@@ -966,7 +958,6 @@
             const note = yearData[year]?.notes?.[dateKey];
             const noteColor = yearData[year]?.noteColors?.[dateKey];
             if (note) {
-            // Aplicar color de borde personalizado
             dayDiv.style.borderColor = noteColor || "#ffcc00";
             dayDiv.style.borderWidth = "3px";
             dayDiv.style.borderStyle = "solid";
@@ -974,7 +965,6 @@
             tooltip.className = "note-tooltip";
             tooltip.textContent = note.length > 65 ? note.substring(0, 62) + "..." : note;
             tooltip.style.backgroundColor = noteColor || "#ffcc00";
-            // Flecha del tooltip del mismo color
             const style = document.createElement('style');
             style.textContent = `.note-tooltip::after { border-top-color: ${noteColor || "#ffcc00"} !important; }`;
             tooltip.appendChild(style);
@@ -1086,7 +1076,6 @@
             }
             }
 
-            // Event listeners
             document.getElementById("btnCancelModal").onclick = () => {
             document.getElementById("dayModal").style.display = "none";
             selectedDateInfo = null;
@@ -1112,7 +1101,7 @@
             const { dateKey, year } = selectedDateInfo;
             if (yearData[year].notes && yearData[year].notes[dateKey]) {
             delete yearData[year].notes[dateKey];
-            delete yearData[year].noteColors?.[dateKey];
+            if (yearData[year].noteColors) delete yearData[year].noteColors[dateKey];
             saveData();
             createCalendar(year);
             document.getElementById("dayModal").style.display = "none";
