@@ -1,0 +1,23 @@
+{
+  "name": "Calendario Vacaciones",
+  "short_name": "Vacaciones",
+  "description": "Gestiona tus vacaciones en la nube",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#f0f4f8",
+  "theme_color": "#4c6ef5",
+  "icons": [
+    {
+      "src": "https://raw.githubusercontent.com/Silviadla/Calendario-Vacaciones/main/vacaciones.jpeg",
+      "sizes": "192x192",
+      "type": "image/jpeg",
+      "purpose": "any"
+    },
+    {
+      "src": "https://raw.githubusercontent.com/Silviadla/Calendario-Vacaciones/main/vacaciones.jpeg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any"
+    }
+  ]
+}
