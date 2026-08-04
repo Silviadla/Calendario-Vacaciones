@@ -900,33 +900,34 @@
             for (let y = 2025; y <= prevYear; y++) calculateCarryOver(y);
             }
 
-            function updateCounters() {
-            const data = yearData[currentYear] || { vacation: new Set(), vacationPrev: new Set() };
+            function getTotalUsedInYear(year) {
+            // Días usados directamente en el año
+            const directUsed = yearData[year]?.vacation.size || 0;
             
-            // Calcular días usados del año actual (vacation) + días de vacaciones del año actual 
-            // que se han usado en años futuros como "vacationPrev"
-            let usedInFuture = 0;
-            for (let y = currentYear + 1; y <= 2100; y++) {
+            // Días de este año usados como "vacationPrev" en años futuros
+            let futureUsed = 0;
+            for (let y = year + 1; y <= 2100; y++) {
             if (yearData[y] && yearData[y].vacationPrev) {
-            // Solo contar los días que corresponden al año actual
             for (const dateKey of yearData[y].vacationPrev) {
             const dateParts = dateKey.split('-');
             const yearOfDate = parseInt(dateParts[0]);
-            // Si el año de la fecha es el año actual, contar como usado
-            if (yearOfDate === currentYear) {
-            usedInFuture++;
+            if (yearOfDate === year) {
+            futureUsed++;
             }
             }
             }
             }
-            
-            const totalUsed = data.vacation.size + usedInFuture;
+            return directUsed + futureUsed;
+            }
+
+            function updateCounters() {
             const carry = calculateCarryOver(currentYear - 1);
+            const totalUsed = getTotalUsedInYear(currentYear);
             const totalAvailable = vacationLimit + carry;
             const remaining = totalAvailable - totalUsed;
             
             document.getElementById("vacationCount").textContent = totalUsed;
-            document.getElementById("vacationPrevCount").textContent = `${data.vacationPrev.size} (de ${carry})`;
+            document.getElementById("vacationPrevCount").textContent = `${yearData[currentYear]?.vacationPrev?.size || 0} (de ${carry})`;
             document.getElementById("remaining").textContent = remaining;
             }
 
@@ -1055,43 +1056,22 @@
             initColorPalette(selectedColor);
             
             const carry = calculateCarryOver(year - 1);
-            const data = yearData[year] || { vacation: new Set(), vacationPrev: new Set() };
-            
-            // Calcular días usados del año actual incluyendo futuros
-            let usedInFuture = 0;
-            let totalUsedCurrent = data.vacation.size;
-            if (year === currentYear) {
-            for (let y = currentYear + 1; y <= 2100; y++) {
-            if (yearData[y] && yearData[y].vacationPrev) {
-            for (const key of yearData[y].vacationPrev) {
-            const dateParts = key.split('-');
-            const yearOfDate = parseInt(dateParts[0]);
-            if (yearOfDate === currentYear) {
-            usedInFuture++;
-            }
-            }
-            }
-            }
-            totalUsedCurrent += usedInFuture;
-            }
-            
+            const totalUsed = getTotalUsedInYear(year);
             const totalAvailable = vacationLimit + carry;
-            const remainingCurrent = totalAvailable - totalUsedCurrent;
-            const remainingCarry = carry - data.vacationPrev.size;
-            const totalRemaining = remainingCurrent;
+            const remaining = totalAvailable - totalUsed;
             
             const optionsDiv = document.getElementById("vacationOptions");
             const noDaysMsg = document.getElementById("noMoreDaysMessage");
-            if (totalRemaining <= 0) {
+            if (remaining <= 0) {
             optionsDiv.style.display = "none";
             noDaysMsg.style.display = "block";
             } else {
             optionsDiv.style.display = "block";
             noDaysMsg.style.display = "none";
-            document.getElementById("btnVacCurrent").disabled = remainingCurrent <= 0;
-            document.getElementById("btnVacPrev").disabled = remainingCarry <= 0;
-            document.getElementById("btnVacCurrent").style.opacity = remainingCurrent <= 0 ? "0.5" : "1";
-            document.getElementById("btnVacPrev").style.opacity = remainingCarry <= 0 ? "0.5" : "1";
+            document.getElementById("btnVacCurrent").disabled = false;
+            document.getElementById("btnVacPrev").disabled = (carry - (yearData[year]?.vacationPrev?.size || 0)) <= 0;
+            document.getElementById("btnVacCurrent").style.opacity = "1";
+            document.getElementById("btnVacPrev").style.opacity = (carry - (yearData[year]?.vacationPrev?.size || 0)) <= 0 ? "0.5" : "1";
             }
             document.getElementById("dayModal").style.display = "flex";
             }
@@ -1114,16 +1094,21 @@
             }
             }
             const carry = calculateCarryOver(year - 1);
+            const totalUsed = getTotalUsedInYear(year);
+            const totalAvailable = vacationLimit + carry;
+            let remaining = totalAvailable - totalUsed;
+            
             daysToMark.forEach(k => {
             if (holidays.has(k)) return;
+            if (remaining > 0) {
             if (usePrev) {
             if (data.vacationPrev.size < carry) {
             data.vacationPrev.add(k);
             }
             } else {
-            if (data.vacation.size < vacationLimit + (year > currentYear ? 0 : carry)) {
             data.vacation.add(k);
             }
+            remaining--;
             }
             });
             delete carryOver[year];
