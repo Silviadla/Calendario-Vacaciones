@@ -903,9 +903,17 @@
             function updateCounters() {
             const data = yearData[currentYear] || { vacation: new Set(), vacationPrev: new Set() };
             const carry = calculateCarryOver(currentYear - 1);
-            document.getElementById("vacationCount").textContent = data.vacation.size;
+            // Calcular los días de vacaciones del año actual usados en años futuros
+            let usedInFuture = 0;
+            for (let y = currentYear + 1; y <= 2100; y++) {
+            if (yearData[y] && yearData[y].vacationPrev) {
+            usedInFuture += yearData[y].vacationPrev.size;
+            }
+            }
+            const totalUsed = data.vacation.size + usedInFuture;
+            document.getElementById("vacationCount").textContent = totalUsed;
             document.getElementById("vacationPrevCount").textContent = `${data.vacationPrev.size} (de ${carry})`;
-            document.getElementById("remaining").textContent = (vacationLimit + carry) - (data.vacation.size + data.vacationPrev.size);
+            document.getElementById("remaining").textContent = (vacationLimit + carry) - totalUsed;
             }
 
             function initColorPalette(currentColor) {
@@ -1034,7 +1042,17 @@
             
             const carry = calculateCarryOver(year - 1);
             const data = yearData[year] || { vacation: new Set(), vacationPrev: new Set() };
-            const remainingCurrent = vacationLimit - data.vacation.size;
+            
+            // Para el año actual, calcular los días usados incluyendo los de años futuros
+            let usedInFuture = 0;
+            if (year === currentYear) {
+            for (let y = currentYear + 1; y <= 2100; y++) {
+            if (yearData[y] && yearData[y].vacationPrev) {
+            usedInFuture += yearData[y].vacationPrev.size;
+            }
+            }
+            }
+            const remainingCurrent = (vacationLimit + (year === currentYear ? 0 : carry)) - data.vacation.size - usedInFuture;
             const remainingCarry = carry - data.vacationPrev.size;
             const totalRemaining = remainingCurrent + remainingCarry;
             const optionsDiv = document.getElementById("vacationOptions");
@@ -1074,9 +1092,28 @@
             daysToMark.forEach(k => {
             if (holidays.has(k)) return;
             if (usePrev) {
-            if (data.vacationPrev.size < carry) data.vacationPrev.add(k);
+            if (data.vacationPrev.size < carry) {
+            data.vacationPrev.add(k);
+            // Si estamos en un año futuro, también descontar del año actual
+            if (year > currentYear) {
+            // Buscar el año más reciente que tenga días disponibles
+            for (let y = year - 1; y >= 2025; y--) {
+            if (yearData[y] && yearData[y].vacation.size > 0) {
+            // Encontrar un día de vacaciones del año anterior para eliminar
+            const prevDates = Array.from(yearData[y].vacation);
+            if (prevDates.length > 0) {
+            const prevDate = prevDates[0];
+            yearData[y].vacation.delete(prevDate);
+            break;
+            }
+            }
+            }
+            }
+            }
             } else {
-            if (data.vacation.size < vacationLimit) data.vacation.add(k);
+            if (data.vacation.size < vacationLimit + (year > currentYear ? 0 : carry)) {
+            data.vacation.add(k);
+            }
             }
             });
             delete carryOver[year];
